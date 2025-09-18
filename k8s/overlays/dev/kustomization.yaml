@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: trip-service-dev
+
+resources:
+- ../../base
+
+patchesStrategicMerge:
+- configmap.yaml
+- resource-quota.yaml
+- ingress-patch.yaml
+
+images:
+- name: trip-service/currency-service
+  newTag: dev-latest
+- name: trip-service/history-service
+  newTag: dev-latest
+- name: trip-service/ranking-service
+  newTag: dev-latest
+- name: trip-service/dataingestor-service
+  newTag: dev-latest
+- name: trip-service/frontend
+  newTag: dev-latest
+
+replicas:
+- name: currency-service
+  count: 1
+- name: history-service
+  count: 1
+- name: ranking-service
+  count: 1
+- name: dataingestor-service
+  count: 1
+- name: frontend
+  count: 1
+- name: nginx-ingress-controller
+  count: 1

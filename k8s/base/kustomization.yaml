@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+# Infrastructure
+- namespace.yaml
+- configmap.yaml
+- secrets.yaml
+
+# MetalLB
+- metallb/ipaddresspool.yaml
+
+# Ingress Controller
+- ingress-controller/rbac.yaml
+- ingress-controller/nginx-controller.yaml
+
+# Ingress Rules
+- ingress/trip-service-ingress.yaml
+
+# Databases
+- mysql/
+- mongodb/
+- redis/
+
+# Message Queue
+- kafka/
+
+# Application Services
+- services/currency-service/
+- services/history-service/
+- services/ranking-service/
+- services/dataingestor-service/
+- services/frontend/
