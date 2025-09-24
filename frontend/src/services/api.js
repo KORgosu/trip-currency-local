@@ -294,12 +294,15 @@ class ApiService {
 
   // 데이터 유효성 검사 함수 (강화된 버전)
   validateExchangeRateData(data) {
-    if (!data || !data.results || !Array.isArray(data.results)) {
+    // API 응답 구조에 맞게 수정
+    const results = data.results || (data.data && data.data.results);
+    
+    if (!data || !results || !Array.isArray(results)) {
       return false;
     }
     
     // 유효한 데이터가 있는지 확인
-    const validData = data.results.filter(item => 
+    const validData = results.filter(item => 
       item && 
       typeof item.rate === 'number' && 
       item.rate > 0 && 
@@ -317,7 +320,9 @@ class ApiService {
       return false;
     }
     
-    const rates = data.results.map(item => item.rate).filter(rate => rate > 0);
+    // API 응답 구조에 맞게 수정
+    const results = data.results || (data.data && data.data.results);
+    const rates = results.map(item => item.rate).filter(rate => rate > 0);
     
     if (rates.length < 2) {
       return false;

@@ -290,8 +290,21 @@ async def get_exchange_rate_history(
         if period not in valid_periods:
             raise InvalidPeriodError(period, valid_periods)
         
-        target = ValidationUtils.validate_currency_code(target)
-        base = ValidationUtils.validate_currency_code(base)
+        # 통화 코드 검증 및 정규화
+        if not target:
+            raise HTTPException(status_code=400, detail="대상 통화 코드가 제공되지 않았습니다")
+        if not base:
+            raise HTTPException(status_code=400, detail="기준 통화 코드가 제공되지 않았습니다")
+        
+        target = target.upper()
+        base = base.upper()
+        
+        # 유효한 통화 코드인지 확인
+        valid_codes = ['USD', 'JPY', 'EUR', 'CNY', 'GBP', 'AUD', 'CAD', 'CHF', 'SGD', 'HKD', 'THB', 'VND', 'INR', 'BRL', 'RUB', 'MXN', 'ZAR', 'TRY', 'PLN', 'CZK', 'HUF', 'NOK', 'SEK', 'DKK', 'KRW']
+        if target not in valid_codes:
+            raise HTTPException(status_code=400, detail=f"유효하지 않은 대상 통화 코드: {target}")
+        if base not in valid_codes:
+            raise HTTPException(status_code=400, detail=f"유효하지 않은 기준 통화 코드: {base}")
         
         if interval not in ["daily", "hourly"]:
             raise InvalidPeriodError(interval, ["daily", "hourly"])

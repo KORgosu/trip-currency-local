@@ -221,12 +221,16 @@ const ExchangeRateChart = ({ currencyCode = 'USD', timeRange = 'realtime' }) => 
   }, [currencyCode, dataInsufficient]);
 
   const validateChartData = (data) => {
-    if (!data || !data.results || !Array.isArray(data.results)) {
+    // API 응답 구조에 맞게 수정 - data는 이미 response.data
+    const results = data.results;
+    
+    if (!data || !results || !Array.isArray(results)) {
+      console.log('데이터 구조 검증 실패:', { data, results });
       return false;
     }
     
     // 유효한 데이터 포인트 검사
-    const validData = data.results.filter(item => 
+    const validData = results.filter(item => 
       item && 
       typeof item.rate === 'number' && 
       item.rate > 0 && 
@@ -234,6 +238,7 @@ const ExchangeRateChart = ({ currencyCode = 'USD', timeRange = 'realtime' }) => 
       !isNaN(new Date(item.date).getTime())
     );
     
+    console.log('유효한 데이터 개수:', validData.length, '전체 데이터 개수:', results.length);
     return validData.length > 0;
   };
 
@@ -253,60 +258,65 @@ const ExchangeRateChart = ({ currencyCode = 'USD', timeRange = 'realtime' }) => 
       if (response.success) {
         const data = response.data;
         
+        // 디버깅을 위한 로그 추가
+        console.log('API 응답 데이터:', data);
+        console.log('데이터 포인트 수:', data.data_points);
+        console.log('결과 배열:', data.results);
+        
         // 데이터 유효성 검사 강화
         if (!validateChartData(data)) {
+          console.log('데이터 검증 실패');
           setDataInsufficient(true);
           setLoading(false);
           return;
         }
         
-        // 5분 단위로 하루 데이터 생성 (288개 포인트: 24시간 * 12개/시간)
-        const now = new Date();
-        const startOfDay = new Date(now);
-        startOfDay.setHours(0, 0, 0, 0);
+        // API 응답 구조에 맞게 수정
+        const results = data.results || (data.data && data.data.results);
+        
+        // 실제 데이터가 있는 시간 범위를 찾아서 차트 생성
+        if (results.length === 0) {
+          setDataInsufficient(true);
+          setLoading(false);
+          return;
+        }
+        
+        // 데이터를 시간순으로 정렬
+        const sortedResults = results.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // 첫 번째 데이터와 마지막 데이터의 시간을 기준으로 차트 생성
+        const firstDataTime = new Date(sortedResults[0].date);
+        const lastDataTime = new Date(sortedResults[sortedResults.length - 1].date);
+        
+        // 데이터 간격 계산 (분 단위)
+        const timeDiffMinutes = (lastDataTime.getTime() - firstDataTime.getTime()) / (1000 * 60);
+        const intervalMinutes = Math.max(5, Math.floor(timeDiffMinutes / (results.length - 1))); // 최소 5분 간격
         
         const chartLabels = [];
         const chartData = [];
         const chartPoints = [];
         
-        // 5분 단위로 하루 데이터 생성
-        for (let i = 0; i < 288; i++) { // 24시간 * 12개/시간 = 288개
-          const timePoint = new Date(startOfDay.getTime() + (i * 5 * 60 * 1000));
-          const timeLabel = timePoint.toLocaleTimeString('ko-KR', { 
+        // 실제 데이터를 기반으로 차트 포인트 생성
+        sortedResults.forEach((item, index) => {
+          const itemTime = new Date(item.date);
+          const timeLabel = itemTime.toLocaleTimeString('ko-KR', { 
             hour: '2-digit', 
             minute: '2-digit',
             hour12: false
           });
           
           chartLabels.push(timeLabel);
-          
-          // 실제 데이터에서 해당 시간의 데이터 찾기
-          const actualData = data.results.find(item => {
-            const itemTime = new Date(item.date);
-            const diffMinutes = Math.abs(itemTime.getTime() - timePoint.getTime()) / (1000 * 60);
-            return diffMinutes <= 2.5; // 5분 범위 내의 데이터
+          chartData.push(item.rate);
+          chartPoints.push({
+            x: index,
+            y: item.rate,
+            showPoint: true
           });
-          
-          if (actualData) {
-            chartData.push(actualData.rate);
-            chartPoints.push({
-              x: i,
-              y: actualData.rate,
-              showPoint: true
-            });
-          } else {
-            chartData.push(null); // 데이터가 없으면 null
-            chartPoints.push({
-              x: i,
-              y: null,
-              showPoint: false
-            });
-          }
-        }
+        });
         
-        // 유효한 데이터가 충분하지 않은 경우 (전체 데이터의 10% 미만)
+        // 유효한 데이터가 충분하지 않은 경우 (최소 1개 데이터 필요)
         const validRates = chartData.filter(rate => rate !== null && rate > 0);
-        if (validRates.length < 29) { // 288 * 0.1 = 28.8, 최소 29개 데이터 필요
+        if (validRates.length < 1) { // 최소 1개 데이터 필요
           setDataInsufficient(true);
           setLoading(false);
           return;

@@ -144,8 +144,8 @@ class ValidationUtils:
     """검증 유틸리티"""
     
     @staticmethod
-    def validate_currency_code(code: str) -> bool:
-        """통화 코드 검증"""
+    def validate_currency_code(code: str) -> str:
+        """통화 코드 검증 및 정규화"""
         valid_codes = [
             # 주요 통화
             'USD', 'JPY', 'EUR', 'CNY', 'GBP', 'AUD', 'CAD', 'CHF', 'SGD', 'HKD', 'THB', 'VND', 'INR', 'BRL', 'RUB', 'MXN', 'ZAR', 'TRY', 'PLN', 'CZK', 'HUF', 'NOK', 'SEK', 'DKK', 'KRW',
@@ -158,7 +158,15 @@ class ValidationUtils:
             # 추가 아프리카/중동 통화
             'EGP', 'MAD', 'TND', 'NGN', 'KES', 'UGX', 'TZS'
         ]
-        return code.upper() in valid_codes
+        
+        if not code:
+            raise ValueError("통화 코드가 제공되지 않았습니다")
+        
+        normalized_code = code.upper()
+        if normalized_code not in valid_codes:
+            raise ValueError(f"유효하지 않은 통화 코드: {code}")
+        
+        return normalized_code
     
     @staticmethod
     def validate_country_code(code: str) -> bool:
