@@ -20,20 +20,21 @@ const SearchContainer = styled.div`
 const SearchInput = styled.input`
   flex: 1;
   padding: 1rem;
-  border: 2px solid #e1e8ed;
+  border: 2px solid #3a3a3a;
   border-radius: 8px;
   font-size: 1rem;
-  background-color: white;
-  color: #000000;
-  transition: border-color 0.3s;
+  background-color: #1a1a1a;
+  color: #f8f9fa;
+  transition: all 0.3s ease;
   
   &::placeholder {
-    color: #000000;
+    color: #a0a0a0;
   }
   
   &:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #ffd700;
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
   }
   
   @media (max-width: 480px) {
@@ -43,8 +44,8 @@ const SearchInput = styled.input`
 `;
 
 const SearchButton = styled.button`
-  background-color: #667eea;
-  color: white;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  color: #0a0a0a;
   border: none;
   border-radius: 50%;
   width: 50px;
@@ -53,10 +54,30 @@ const SearchButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  outline: none;
   
   &:hover {
-    background-color: #5a6fd8;
+    background: linear-gradient(135deg, #ffed4e 0%, #ffd700 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+  }
+  
+  &:focus {
+    outline: none;
+  }
+  
+  &:active {
+    outline: none;
+  }
+  
+  &:disabled {
+    background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 100%);
+    color: #a0a0a0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
   
   @media (max-width: 480px) {
@@ -76,23 +97,53 @@ const SelectedCountries = styled.div`
 const CountryTag = styled.div`
   display: flex;
   align-items: center;
-  background-color: #f8f9fa;
-  border: 2px solid #8e44ad;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border: 2px solid #ffd700;
   border-radius: 20px;
   padding: 0.5rem 1rem;
   font-size: 1.1rem;
+  color: #ffd700;
+  box-shadow: 0 2px 10px rgba(255, 215, 0, 0.2);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: #ffed4e;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    transform: translateY(-2px);
+  }
 `;
 
 const RemoveButton = styled.button`
   background: none;
   border: none;
-  color: #666;
+  color: #a0a0a0;
   cursor: pointer;
   margin-left: 0.5rem;
   font-size: 1.2rem;
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  box-shadow: none;
   
   &:hover {
-    color: #e74c3c;
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+    transform: scale(1.1);
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+  
+  &:active {
+    outline: none;
+    box-shadow: none;
   }
 `;
 
@@ -106,10 +157,10 @@ const CountryList = styled.div`
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
-  border: 1px solid #e1e8ed;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border: 1px solid #3a3a3a;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(255, 215, 0, 0.1);
   max-height: 300px;
   overflow-y: auto;
   z-index: 1000;
@@ -123,20 +174,21 @@ const CountryItem = styled.button`
   padding: 0.75rem 1rem;
   border: none;
   background: ${props => {
-    if (props.$isClicked) return '#e8f5e8';
-    if (props.$isActive) return '#f0f4ff';
-    return 'white';
+    if (props.$isClicked) return 'linear-gradient(135deg, #2a4a2a 0%, #3a5a3a 100%)';
+    if (props.$isActive) return 'linear-gradient(135deg, #2a2a4a 0%, #3a3a5a 100%)';
+    return 'transparent';
   }};
   cursor: pointer;
   text-align: left;
   transition: all 0.3s ease;
   width: 100%;
-  border-bottom: 1px solid #f5f5f5;
-  color: ${props => props.$isClicked ? '#2e7d32' : '#333333'};
+  border-bottom: 1px solid #3a3a3a;
+  color: ${props => props.$isClicked ? '#4ade80' : '#f8f9fa'};
   
   &:hover {
-    background-color: ${props => props.$isClicked ? '#d4edda' : '#e3f2fd'};
-    color: ${props => props.$isClicked ? '#2e7d32' : '#1976d2'};
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #0a0a0a;
+    transform: translateX(5px);
   }
   
   &:last-child {
@@ -144,8 +196,8 @@ const CountryItem = styled.button`
   }
   
   &.highlighted {
-    background-color: #e3f2fd;
-    color: #1976d2;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #0a0a0a;
   }
 `;
 
@@ -153,9 +205,9 @@ const CountryFlag = styled.span`
   font-size: 1.2rem;
 `;
 
-const CountrySelector = () => {
+const CountrySelector = ({ selectedCountries: externalSelectedCountries = [], onCountriesChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCountries, setSelectedCountries] = useState(['US', 'JP', 'GB']);
+  const [selectedCountries, setSelectedCountries] = useState(externalSelectedCountries.length > 0 ? externalSelectedCountries : ['US', 'JP', 'GB']);
   const [showList, setShowList] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -165,49 +217,87 @@ const CountrySelector = () => {
   const navigate = useNavigate();
   const { recordSelection } = useRankingData();
 
-  // 확장된 국가 데이터
+  // 데이터베이스의 69개 국가 데이터 (init-db.sql 기반)
   const countries = [
-    { code: 'US', name: '미국', flag: '🇺🇸', nameEn: 'United States' },
-    { code: 'JP', name: '일본', flag: '🇯🇵', nameEn: 'Japan' },
-    { code: 'GB', name: '영국', flag: '🇬🇧', nameEn: 'United Kingdom' },
-    { code: 'CN', name: '중국', flag: '🇨🇳', nameEn: 'China' },
-    { code: 'DE', name: '독일', flag: '🇩🇪', nameEn: 'Germany' },
-    { code: 'FR', name: '프랑스', flag: '🇫🇷', nameEn: 'France' },
-    { code: 'IT', name: '이탈리아', flag: '🇮🇹', nameEn: 'Italy' },
-    { code: 'ES', name: '스페인', flag: '🇪🇸', nameEn: 'Spain' },
-    { code: 'CA', name: '캐나다', flag: '🇨🇦', nameEn: 'Canada' },
-    { code: 'AU', name: '호주', flag: '🇦🇺', nameEn: 'Australia' },
-    { code: 'KR', name: '한국', flag: '🇰🇷', nameEn: 'South Korea' },
-    { code: 'SG', name: '싱가포르', flag: '🇸🇬', nameEn: 'Singapore' },
-    { code: 'TH', name: '태국', flag: '🇹🇭', nameEn: 'Thailand' },
-    { code: 'MY', name: '말레이시아', flag: '🇲🇾', nameEn: 'Malaysia' },
-    { code: 'ID', name: '인도네시아', flag: '🇮🇩', nameEn: 'Indonesia' },
-    { code: 'PH', name: '필리핀', flag: '🇵🇭', nameEn: 'Philippines' },
-    { code: 'VN', name: '베트남', flag: '🇻🇳', nameEn: 'Vietnam' },
-    { code: 'IN', name: '인도', flag: '🇮🇳', nameEn: 'India' },
-    { code: 'BR', name: '브라질', flag: '🇧🇷', nameEn: 'Brazil' },
-    { code: 'MX', name: '멕시코', flag: '🇲🇽', nameEn: 'Mexico' },
-    { code: 'AR', name: '아르헨티나', flag: '🇦🇷', nameEn: 'Argentina' },
-    { code: 'CH', name: '스위스', flag: '🇨🇭', nameEn: 'Switzerland' },
-    { code: 'NL', name: '네덜란드', flag: '🇳🇱', nameEn: 'Netherlands' },
-    { code: 'BE', name: '벨기에', flag: '🇧🇪', nameEn: 'Belgium' },
-    { code: 'AT', name: '오스트리아', flag: '🇦🇹', nameEn: 'Austria' },
-    { code: 'SE', name: '스웨덴', flag: '🇸🇪', nameEn: 'Sweden' },
-    { code: 'NO', name: '노르웨이', flag: '🇳🇴', nameEn: 'Norway' },
-    { code: 'DK', name: '덴마크', flag: '🇩🇰', nameEn: 'Denmark' },
-    { code: 'FI', name: '핀란드', flag: '🇫🇮', nameEn: 'Finland' },
-    { code: 'PL', name: '폴란드', flag: '🇵🇱', nameEn: 'Poland' },
-    { code: 'RU', name: '러시아', flag: '🇷🇺', nameEn: 'Russia' },
-    { code: 'TR', name: '터키', flag: '🇹🇷', nameEn: 'Turkey' },
-    { code: 'ZA', name: '남아프리카', flag: '🇿🇦', nameEn: 'South Africa' },
-    { code: 'EG', name: '이집트', flag: '🇪🇬', nameEn: 'Egypt' },
-    { code: 'NG', name: '나이지리아', flag: '🇳🇬', nameEn: 'Nigeria' },
-    { code: 'KE', name: '케냐', flag: '🇰🇪', nameEn: 'Kenya' },
-    { code: 'MA', name: '모로코', flag: '🇲🇦', nameEn: 'Morocco' },
-    { code: 'NZ', name: '뉴질랜드', flag: '🇳🇿', nameEn: 'New Zealand' },
-    { code: 'IL', name: '이스라엘', flag: '🇮🇱', nameEn: 'Israel' },
-    { code: 'AE', name: '아랍에미리트', flag: '🇦🇪', nameEn: 'United Arab Emirates' },
-    { code: 'SA', name: '사우디아라비아', flag: '🇸🇦', nameEn: 'Saudi Arabia' },
+    // 주요 통화
+    { code: 'US', name: '미국', flag: '🇺🇸', nameEn: 'United States', currency: 'USD' },
+    { code: 'JP', name: '일본', flag: '🇯🇵', nameEn: 'Japan', currency: 'JPY' },
+    { code: 'GB', name: '영국', flag: '🇬🇧', nameEn: 'United Kingdom', currency: 'GBP' },
+    { code: 'CN', name: '중국', flag: '🇨🇳', nameEn: 'China', currency: 'CNY' },
+    { code: 'AU', name: '호주', flag: '🇦🇺', nameEn: 'Australia', currency: 'AUD' },
+    { code: 'CA', name: '캐나다', flag: '🇨🇦', nameEn: 'Canada', currency: 'CAD' },
+    { code: 'CH', name: '스위스', flag: '🇨🇭', nameEn: 'Switzerland', currency: 'CHF' },
+    { code: 'HK', name: '홍콩', flag: '🇭🇰', nameEn: 'Hong Kong', currency: 'HKD' },
+    { code: 'SG', name: '싱가포르', flag: '🇸🇬', nameEn: 'Singapore', currency: 'SGD' },
+    { code: 'KR', name: '한국', flag: '🇰🇷', nameEn: 'South Korea', currency: 'KRW' },
+
+    // 추가 아시아 통화
+    { code: 'TW', name: '대만', flag: '🇹🇼', nameEn: 'Taiwan', currency: 'TWD' },
+    { code: 'MY', name: '말레이시아', flag: '🇲🇾', nameEn: 'Malaysia', currency: 'MYR' },
+    { code: 'PH', name: '필리핀', flag: '🇵🇭', nameEn: 'Philippines', currency: 'PHP' },
+    { code: 'ID', name: '인도네시아', flag: '🇮🇩', nameEn: 'Indonesia', currency: 'IDR' },
+    { code: 'NZ', name: '뉴질랜드', flag: '🇳🇿', nameEn: 'New Zealand', currency: 'NZD' },
+    { code: 'IL', name: '이스라엘', flag: '🇮🇱', nameEn: 'Israel', currency: 'ILS' },
+    { code: 'AE', name: '아랍에미리트', flag: '🇦🇪', nameEn: 'United Arab Emirates', currency: 'AED' },
+    { code: 'QA', name: '카타르', flag: '🇶🇦', nameEn: 'Qatar', currency: 'QAR' },
+    { code: 'KW', name: '쿠웨이트', flag: '🇰🇼', nameEn: 'Kuwait', currency: 'KWD' },
+    { code: 'BH', name: '바레인', flag: '🇧🇭', nameEn: 'Bahrain', currency: 'BHD' },
+    { code: 'OM', name: '오만', flag: '🇴🇲', nameEn: 'Oman', currency: 'OMR' },
+    { code: 'JO', name: '요르단', flag: '🇯🇴', nameEn: 'Jordan', currency: 'JOD' },
+    { code: 'LB', name: '레바논', flag: '🇱🇧', nameEn: 'Lebanon', currency: 'LBP' },
+    { code: 'PK', name: '파키스탄', flag: '🇵🇰', nameEn: 'Pakistan', currency: 'PKR' },
+    { code: 'BD', name: '방글라데시', flag: '🇧🇩', nameEn: 'Bangladesh', currency: 'BDT' },
+    { code: 'LK', name: '스리랑카', flag: '🇱🇰', nameEn: 'Sri Lanka', currency: 'LKR' },
+    { code: 'NP', name: '네팔', flag: '🇳🇵', nameEn: 'Nepal', currency: 'NPR' },
+    { code: 'AF', name: '아프가니스탄', flag: '🇦🇫', nameEn: 'Afghanistan', currency: 'AFN' },
+    { code: 'KZ', name: '카자흐스탄', flag: '🇰🇿', nameEn: 'Kazakhstan', currency: 'KZT' },
+    { code: 'UZ', name: '우즈베키스탄', flag: '🇺🇿', nameEn: 'Uzbekistan', currency: 'UZS' },
+    { code: 'KG', name: '키르기스스탄', flag: '🇰🇬', nameEn: 'Kyrgyzstan', currency: 'KGS' },
+    { code: 'TJ', name: '타지키스탄', flag: '🇹🇯', nameEn: 'Tajikistan', currency: 'TJS' },
+    { code: 'TM', name: '투르크메니스탄', flag: '🇹🇲', nameEn: 'Turkmenistan', currency: 'TMT' },
+
+    // 추가 유럽 통화
+    { code: 'IS', name: '아이슬란드', flag: '🇮🇸', nameEn: 'Iceland', currency: 'ISK' },
+    { code: 'RO', name: '루마니아', flag: '🇷🇴', nameEn: 'Romania', currency: 'RON' },
+    { code: 'BG', name: '불가리아', flag: '🇧🇬', nameEn: 'Bulgaria', currency: 'BGN' },
+    { code: 'HR', name: '크로아티아', flag: '🇭🇷', nameEn: 'Croatia', currency: 'HRK' },
+    { code: 'RS', name: '세르비아', flag: '🇷🇸', nameEn: 'Serbia', currency: 'RSD' },
+    { code: 'UA', name: '우크라이나', flag: '🇺🇦', nameEn: 'Ukraine', currency: 'UAH' },
+    { code: 'BY', name: '벨라루스', flag: '🇧🇾', nameEn: 'Belarus', currency: 'BYN' },
+
+    // 추가 아메리카 통화
+    { code: 'AR', name: '아르헨티나', flag: '🇦🇷', nameEn: 'Argentina', currency: 'ARS' },
+    { code: 'CL', name: '칠레', flag: '🇨🇱', nameEn: 'Chile', currency: 'CLP' },
+    { code: 'CO', name: '콜롬비아', flag: '🇨🇴', nameEn: 'Colombia', currency: 'COP' },
+    { code: 'PE', name: '페루', flag: '🇵🇪', nameEn: 'Peru', currency: 'PEN' },
+    { code: 'UY', name: '우루과이', flag: '🇺🇾', nameEn: 'Uruguay', currency: 'UYU' },
+    { code: 'BO', name: '볼리비아', flag: '🇧🇴', nameEn: 'Bolivia', currency: 'BOB' },
+    { code: 'PY', name: '파라과이', flag: '🇵🇾', nameEn: 'Paraguay', currency: 'PYG' },
+    { code: 'VE', name: '베네수엘라', flag: '🇻🇪', nameEn: 'Venezuela', currency: 'VES' },
+
+    // 추가 아프리카/중동 통화
+    { code: 'EG', name: '이집트', flag: '🇪🇬', nameEn: 'Egypt', currency: 'EGP' },
+    { code: 'MA', name: '모로코', flag: '🇲🇦', nameEn: 'Morocco', currency: 'MAD' },
+    { code: 'TN', name: '튀니지', flag: '🇹🇳', nameEn: 'Tunisia', currency: 'TND' },
+    { code: 'NG', name: '나이지리아', flag: '🇳🇬', nameEn: 'Nigeria', currency: 'NGN' },
+    { code: 'KE', name: '케냐', flag: '🇰🇪', nameEn: 'Kenya', currency: 'KES' },
+    { code: 'UG', name: '우간다', flag: '🇺🇬', nameEn: 'Uganda', currency: 'UGX' },
+    { code: 'TZ', name: '탄자니아', flag: '🇹🇿', nameEn: 'Tanzania', currency: 'TZS' },
+
+    // 기타 주요 통화
+    { code: 'CZ', name: '체코', flag: '🇨🇿', nameEn: 'Czech Republic', currency: 'CZK' },
+    { code: 'DK', name: '덴마크', flag: '🇩🇰', nameEn: 'Denmark', currency: 'DKK' },
+    { code: 'HU', name: '헝가리', flag: '🇭🇺', nameEn: 'Hungary', currency: 'HUF' },
+    { code: 'NO', name: '노르웨이', flag: '🇳🇴', nameEn: 'Norway', currency: 'NOK' },
+    { code: 'SE', name: '스웨덴', flag: '🇸🇪', nameEn: 'Sweden', currency: 'SEK' },
+    { code: 'TH', name: '태국', flag: '🇹🇭', nameEn: 'Thailand', currency: 'THB' },
+    { code: 'VN', name: '베트남', flag: '🇻🇳', nameEn: 'Vietnam', currency: 'VND' },
+    { code: 'IN', name: '인도', flag: '🇮🇳', nameEn: 'India', currency: 'INR' },
+    { code: 'BR', name: '브라질', flag: '🇧🇷', nameEn: 'Brazil', currency: 'BRL' },
+    { code: 'RU', name: '러시아', flag: '🇷🇺', nameEn: 'Russia', currency: 'RUB' },
+    { code: 'MX', name: '멕시코', flag: '🇲🇽', nameEn: 'Mexico', currency: 'MXN' },
+    { code: 'ZA', name: '남아프리카 공화국', flag: '🇿🇦', nameEn: 'South Africa', currency: 'ZAR' },
+    { code: 'TR', name: '터키', flag: '🇹🇷', nameEn: 'Turkey', currency: 'TRY' }
   ];
 
   // 디바운싱 효과
@@ -261,7 +351,13 @@ const CountrySelector = () => {
         setClickedItem(null);
       }, 500);
       
-      setSelectedCountries([...selectedCountries, country.code]);
+      const newSelectedCountries = [...selectedCountries, country.code];
+      setSelectedCountries(newSelectedCountries);
+      
+      // 외부 컴포넌트에 변경사항 전달
+      if (onCountriesChange) {
+        onCountriesChange(newSelectedCountries);
+      }
       
       // 랭킹 서비스에 사용자 선택 기록
       try {
@@ -279,7 +375,13 @@ const CountrySelector = () => {
   };
 
   const handleCountryRemove = (countryCode) => {
-    setSelectedCountries(selectedCountries.filter(code => code !== countryCode));
+    const newSelectedCountries = selectedCountries.filter(code => code !== countryCode);
+    setSelectedCountries(newSelectedCountries);
+    
+    // 외부 컴포넌트에 변경사항 전달
+    if (onCountriesChange) {
+      onCountriesChange(newSelectedCountries);
+    }
   };
 
   const getCountryInfo = (code) => {

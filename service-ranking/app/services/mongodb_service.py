@@ -55,7 +55,7 @@ class MongoDBService:
             
             # 연결 문자열 구성
             if username and password:
-                connection_string = f"mongodb://{username}:{password}@{host}:{port}/{database}"
+                connection_string = f"mongodb://{username}:{password}@{host}:{port}/{database}?authSource=admin"
             else:
                 connection_string = f"mongodb://{host}:{port}/{database}"
             

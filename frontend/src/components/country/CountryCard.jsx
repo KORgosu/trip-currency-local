@@ -3,15 +3,16 @@ import styled from 'styled-components';
 import useCurrencyData from '../../hooks/useCurrencyData';
 
 const CardContainer = styled.div`
-  background: white;
+  background: #2a2a2a;
+  border: 2px solid #ffd700;
   border-radius: 10px;
   padding: 1.5rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(255, 215, 0, 0.2);
   transition: transform 0.3s, box-shadow 0.3s;
   
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
   }
 `;
 
@@ -32,28 +33,28 @@ const CountryInfo = styled.div`
 
 const CountryName = styled.h3`
   margin: 0;
-  color: #2c3e50;
+  color: #ffd700;
   font-size: 1.2rem;
 `;
 
 const CountryCode = styled.p`
   margin: 0;
-  color: #666;
+  color: #ffed4e;
   font-size: 0.9rem;
 `;
 
 const ChartIcon = styled.button`
   background: none;
-  border: none;
+  border: 1px solid #ffd700;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 6px;
-  color: #3498db;
+  color: #ffd700;
   transition: all 0.2s;
   
   &:hover {
-    background: #ecf0f1;
-    color: #2980b9;
+    background: #ffd700;
+    color: #1a1a1a;
   }
   
   &:active {
@@ -67,25 +68,25 @@ const ExchangeRateSection = styled.div`
 
 const RateLabel = styled.div`
   font-size: 0.85rem;
-  color: #666;
+  color: #ffed4e;
   margin-bottom: 0.3rem;
 `;
 
 const RateValue = styled.div`
   font-size: 1.4rem;
   font-weight: bold;
-  color: #2c3e50;
+  color: #ffd700;
   margin-bottom: 0.2rem;
 `;
 
 const RateChange = styled.div`
   font-size: 0.8rem;
-  color: ${props => props.$positive ? '#27ae60' : '#e74c3c'};
+  color: ${props => props.$positive ? '#ffed4e' : '#ff6666'};
 `;
 
 const LoadingIndicator = styled.div`
   text-align: center;
-  color: #7f8c8d;
+  color: #ffd700;
   font-size: 0.9rem;
   padding: 1rem 0;
   display: flex;
@@ -97,8 +98,8 @@ const LoadingIndicator = styled.div`
 const LoadingSpinner = styled.div`
   width: 20px;
   height: 20px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #667eea;
+  border: 2px solid #2a2a2a;
+  border-top: 2px solid #ffd700;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   
@@ -110,19 +111,19 @@ const LoadingSpinner = styled.div`
 
 const ErrorMessage = styled.div`
   text-align: center;
-  color: #e74c3c;
+  color: #ff6666;
   font-size: 0.9rem;
   padding: 1rem 0;
 `;
 
 const DataInsufficientMessage = styled.div`
   text-align: center;
-  color: #856404;
+  color: #ffd700;
   font-size: 0.9rem;
   padding: 1rem 0;
-  background-color: #fff3cd;
+  background-color: #2a2a2a;
   border-radius: 6px;
-  border: 1px solid #ffc107;
+  border: 1px solid #ffd700;
   margin: 0.5rem 0;
 `;
 
@@ -133,10 +134,10 @@ const DataInsufficientIcon = styled.span`
 
 const LastUpdated = styled.div`
   font-size: 0.75rem;
-  color: #95a5a6;
+  color: #ffed4e;
   text-align: center;
   padding-top: 1rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid #ffd700;
 `;
 
 const CountryCard = ({ country, onChartClick }) => {

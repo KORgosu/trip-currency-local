@@ -1,5 +1,5 @@
-# Trip Currency Shared Package v1.0.0
-git+https://github.com/KORgosu/shared_package_local.git@v1.0.0#egg=trip-currency-shared
+# Trip Currency Shared Package v1.0.0 (로컬 설치)
+-e ../package-shared
 
 # FastAPI and web framework
 fastapi==0.104.1

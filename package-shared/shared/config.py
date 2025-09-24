@@ -5,7 +5,7 @@ Configuration Management
 import os
 from enum import Enum
 from typing import Optional, List
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -22,9 +22,20 @@ class DatabaseConfig(BaseSettings):
     host: str = Field(default="localhost")
     port: int = Field(default=3306)
     name: str = Field(default="currency_db")
-    user: str = Field(default="currency_user")
-    password: str = Field(default="password")
-    
+    user: str = Field(default="trip_user")
+    password: str = Field(default="trip-service-user")
+
+    def __init__(self, **kwargs):
+        import os
+        super().__init__(
+            host=os.getenv("MYSQL_HOST", "localhost"),
+            port=int(os.getenv("MYSQL_PORT", "3306")),
+            name=os.getenv("MYSQL_DATABASE", "currency_db"),
+            user=os.getenv("MYSQL_USER", "trip_user"),
+            password=os.getenv("MYSQL_PASSWORD", "trip-service-user"),
+            **kwargs
+        )
+
     class Config:
         env_prefix = "DB_"
         env_file = ".env"
@@ -51,8 +62,8 @@ class MongoDBConfig(BaseSettings):
     """MongoDB 설정"""
     host: str = Field(default="localhost")
     port: int = Field(default=27017)
-    user: str = Field(default="admin")
-    password: str = Field(default="password")
+    user: str = Field(default="trip_user")
+    password: str = Field(default="trip-service-mongo")
     database: str = Field(default="currency_db")
     
     def __init__(self, **kwargs):
@@ -60,8 +71,8 @@ class MongoDBConfig(BaseSettings):
         super().__init__(
             host=os.getenv("MONGODB_HOST", "localhost"),
             port=int(os.getenv("MONGODB_PORT", "27017")),
-            user=os.getenv("MONGODB_USER", "admin"),
-            password=os.getenv("MONGODB_PASSWORD", "password"),
+            user=os.getenv("MONGODB_USER", "trip_user"),
+            password=os.getenv("MONGODB_PASSWORD", "trip-service-mongo"),
             database=os.getenv("MONGODB_DATABASE", "currency_db"),
             **kwargs
         )
@@ -84,7 +95,7 @@ class ExternalAPIsConfig(BaseSettings):
 
 class ServiceConfig(BaseSettings):
     """서비스 설정"""
-    name: str = Field(default="trip-currency-service", env="SERVICE_NAME")
+    name: str = Field(default="trip-service-currency", env="SERVICE_NAME")
     version: str = Field(default="1.0.0", env="SERVICE_VERSION")
     service_version: str = Field(default="1.0.0", env="SERVICE_VERSION")
     port: int = Field(default=8000, env="PORT")
@@ -95,7 +106,15 @@ class ServiceConfig(BaseSettings):
     log_format: str = Field(default="text", env="LOG_FORMAT")
     
     # CORS 설정
-    cors_origins: List[str] = Field(default=["http://localhost:3000"], env="CORS_ORIGINS")
+    cors_origins: List[str] = Field(default=["http://localhost:3000"])
+
+    @field_validator('cors_origins', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        if isinstance(v, str):
+            # 콤마로 구분된 문자열을 리스트로 변환
+            return [origin.strip() for origin in v.split(',') if origin.strip()]
+        return v
     
     # 데이터베이스 설정
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)

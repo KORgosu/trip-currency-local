@@ -100,7 +100,7 @@ trip-service-local/
 │   │       │   └── hpa.yaml
 │   │       ├── history-service/
 │   │       ├── ranking-service/
-│   │       ├── dataingestor-service/
+│   │       ├── dataingestor-service/     # 👈 CronJob으로 구성
 │   │       └── frontend/
 │   └── overlays/         # 👈 환경별 설정
 │       ├── dev/
@@ -145,16 +145,18 @@ trip-service-local/
 
 **총 2개의 레포지토리만 필요:**
 
-1. **`trip-service-mono`** (메인 애플리케이션)
+1. **`trip-currency-local`** (메인 애플리케이션)
    - 모든 서비스 코드
    - Kubernetes 매니페스트
    - Docker 설정
    - CI/CD 설정
+   - URL: https://github.com/KORgosu/trip-currency-local
 
-2. **`trip-service-config`** (GitOps용 설정)
+2. **`trip-currency-config`** (GitOps용 설정)
    - ArgoCD 애플리케이션 정의
    - 환경별 배포 설정
    - Helm values 오버라이드
+   - URL: https://github.com/KORgosu/trip-currency-config
 
 ---
 
@@ -173,7 +175,7 @@ Kubernetes Cluster: trip-service-cluster
 │   ├── currency-service-dev
 │   ├── history-service-dev
 │   ├── ranking-service-dev
-│   ├── dataingestor-service-dev
+│   ├── dataingestor-cronjob-dev      # 👈 CronJob으로 변경
 │   ├── frontend-dev
 │   └── kafka-ui-dev
 ├── trip-service-staging    # 스테이징 환경
@@ -209,7 +211,7 @@ mkdir -p k8s/base/{metallb,ingress-controller,ingress}
 mkdir -p k8s/base/{mysql,mongodb,redis,kafka}
 
 # 서비스 디렉토리
-mkdir -p k8s/base/services/{currency-service,history-service,ranking-service,dataingestor-service,frontend}
+  mkdir -p k8s/base/services/{currency-service,history-service,ranking-service,dataingestor-service,frontend}
 
 # 환경별 설정 디렉토리
 mkdir -p config/{dev,staging,prod}
@@ -219,13 +221,19 @@ mkdir -p config/{dev,staging,prod}
 
 **k8s/base/namespace.yaml**
 ```yaml
-apiVersion: v1
-kind: Namespace
+apiVersion: v1 -> 쿠버네티스 코어 API 버전
+kind: Namespace -> 네임스페이스 리소스 타입
 metadata:
-  name: trip-service-dev
+  name: trip-service-dev -> 환경별 네임스페이스 지정 : 개발/스테이징/프로덕션
   labels:
-    name: trip-service-dev
-    environment: dev
+    name: trip-service-dev -> 네임스페이스 식별용
+    environment: dev -> 환경 구분용
+
+    labels 사용 목적 :
+    1. 리소스 격리 = 각 환경의 리소스를 완벽히 격리함
+    2. RBAC 적용 = 환경별 접근 권한을 관리
+    3. 네트워크 정책 = 네임스페이스 간 네트워크 격리 진행
+    4. Resource Quota = 환경별 리소스 사용량 제한
 ---
 apiVersion: v1
 kind: Namespace
@@ -247,6 +255,46 @@ metadata:
 **📋 생성 이유**: 환경별 리소스 격리와 RBAC 적용을 위해 네임스페이스를 먼저 정의합니다.
 
 #### 1-3. ConfigMap 기본 템플릿
+
+** ConfigMap 이란? **
+쿠버네티스에서 설정 데이터를 저장하는 오브젝트
+
+-> 설정과 코드를 분리함
+-> 여러 서비스가 공통 설정을 공유함
+-> 개발/스테이징/프로덕션 환경별로 다른 값을 사용함
+
+  1. 하드코딩 방지
+
+  ❌ Before (하드코딩):
+  # service-currency/app.py
+  MYSQL_HOST = "localhost"  # 개발환경에서만 작동
+  CURRENCY_SERVICE_URL = "http://localhost:8000"
+
+  ✅ After (ConfigMap):
+  # service-currency/app.py
+  import os
+  MYSQL_HOST = os.getenv("MYSQL_HOST")  # ConfigMap에서 주입
+  CURRENCY_SERVICE_URL = os.getenv("CURRENCY_SERVICE_URL")
+
+  2. 환경별 설정 분리
+
+  # 개발환경
+  MYSQL_HOST: "mysql-service"  # 쿠버네티스 서비스명
+
+  # 프로덕션환경
+  MYSQL_HOST: "prod-mysql-cluster.example.com"  # 실제 DB 주소
+
+  3. 서비스 간 통신 설정
+
+  # 마이크로서비스들이 서로를 찾는 방법
+  CURRENCY_SERVICE_URL: "http://currency-service:8000"
+  HISTORY_SERVICE_URL: "http://history-service:8000"
+  RANKING_SERVICE_URL: "http://ranking-service:8000"
+
+    이를 통해:
+  - 환경별로 다른 설정 사용 가능
+  - 코드 변경 없이 설정만 변경 가능
+  - 여러 서비스가 동일한 설정 공유 가능
 
 **k8s/base/configmap.yaml**
 ```yaml
@@ -272,11 +320,10 @@ data:
   # Kafka Configuration
   KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
 
-  # Service URLs
+  # Service URLs (DataIngestor는 CronJob이므로 URL 불필요)
   CURRENCY_SERVICE_URL: "http://currency-service:8000"
   HISTORY_SERVICE_URL: "http://history-service:8000"
   RANKING_SERVICE_URL: "http://ranking-service:8000"
-  DATAINGESTOR_SERVICE_URL: "http://dataingestor-service:8000"
 ```
 
 **📋 생성 이유**: 서비스 간 통신과 외부 의존성 설정을 중앙 집중화하여 관리 복잡성을 줄입니다.
@@ -306,7 +353,7 @@ metadata:
 spec:
   addresses:
   # 👇 실제 환경에 맞게 수정 필요
-  - 192.168.1.100-192.168.1.110  # 10개 IP 할당
+  - 192.168.203.200-192.168.203.210  # 10개 IP 할당
 
   # 대안 1: 단일 IP
   # - 192.168.1.100/32
@@ -327,24 +374,78 @@ spec:
   # L2 모드: 같은 네트워크 세그먼트에서 ARP로 IP 광고
 ```
 
+# kubectl apply -f k8s/base/metallb/ipaddresspool.yaml
+
 **📋 MetalLB 선택 이유**:
 - **온프레미스 LoadBalancer**: 클라우드 없이도 LoadBalancer 타입 서비스 사용 가능
 - **자동 IP 할당**: 서비스마다 자동으로 외부 IP 할당
 - **클라우드와 동일한 경험**: AWS/GCP ELB와 유사한 사용법
 
 #### 2-2. NGINX Ingress Controller 설정
+###  외부에서 클러스터 내부 서비스로 접근할 수 있게 해주는 관문(Gateway)
+
+**⚠️ 주의사항**: ServiceAccount와 RBAC 설정이 필수입니다.
 
 **k8s/base/ingress-controller/nginx-controller.yaml**
 ```yaml
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ingress-nginx
+  name: ingress-nginx -> Ingress Controller 전용 네임스페이스로 격리
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/instance: ingress-nginx
 ---
-# NGINX Ingress Controller Deployment
+# ServiceAccount 생성 (보안 권한 관리)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-ingress-serviceaccount -> NGINX가 사용할 서비스 계정
+  namespace: ingress-nginx
+---
+# ClusterRole 정의 (필요한 권한 명시)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nginx-ingress-clusterrole
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "endpoints", "nodes", "pods", "secrets"]
+  verbs: ["list", "watch", "get"]  # get 권한 필수
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses", "ingressclasses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses/status"]
+  verbs: ["update"]
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["list", "watch", "get", "update", "create"]
+- apiGroups: ["discovery.k8s.io"]
+  resources: ["endpointslices"]
+  verbs: ["list", "watch", "get"]  # EndpointSlice 권한 추가
+---
+# ClusterRoleBinding (ServiceAccount와 ClusterRole을 연결)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nginx-ingress-clusterrole-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nginx-ingress-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: nginx-ingress-serviceaccount
+  namespace: ingress-nginx
+---
+# NGINX Ingress Controller Deployment -> 핵심 컨트롤러
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -371,10 +472,10 @@ spec:
         image: registry.k8s.io/ingress-nginx/controller:v1.8.1
         args:
         - /nginx-ingress-controller
-        - --configmap=$(POD_NAMESPACE)/nginx-configuration
-        - --publish-service=$(POD_NAMESPACE)/ingress-nginx
+        - --configmap=$(POD_NAMESPACE)/nginx-configuration -> 중앙 집중식 NGINX 설정 관리
+        - --publish-service=$(POD_NAMESPACE)/ingress-nginx -> Metallb 연동해서 외부 IP 노출
         - --annotations-prefix=nginx.ingress.kubernetes.io
-        - --enable-ssl-passthrough
+        - --enable-ssl-passthrough -> HTTPS 트래픽을 백엔드로 직접 전달함
         env:
         - name: POD_NAME
           valueFrom:
@@ -384,7 +485,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        ports:
+        ports: -> 포트 설정 진행
         - name: http
           containerPort: 80
           protocol: TCP
@@ -393,13 +494,13 @@ spec:
           protocol: TCP
         resources:
           requests:
-            cpu: 100m
+            cpu: 100m -> 최소 0.1 CPU 코어 + 90MB 메모리 사용
             memory: 90Mi
           limits:
-            cpu: 500m
+            cpu: 500m -> 최대 0.5 CPU 코어 + 256MB 메모리 사용
             memory: 256Mi
 ---
-# MetalLB LoadBalancer Service
+# MetalLB LoadBalancer Service -> Metallb 연동
 apiVersion: v1
 kind: Service
 metadata:
@@ -410,10 +511,10 @@ metadata:
     app.kubernetes.io/part-of: ingress-nginx
   annotations:
     # MetalLB 설정
-    metallb.universe.tf/address-pool: trip-service-pool
-    metallb.universe.tf/allow-shared-ip: "true"
+    metallb.universe.tf/address-pool: trip-service-pool -> Metallb IP 풀을 사용함(ipaddresspool.yaml)
+    metallb.universe.tf/allow-shared-ip: "true" -> IP 공유를 허용한다는 뜻, 여러 서비스가 동일한 IP의 다른 포트 사용 가능
 spec:
-  type: LoadBalancer  # MetalLB가 External IP 할당
+  type: LoadBalancer  # MetalLB가 External IP 할당, MetalLB가 192.168.203.200-210 범위에서 IP 자동 할당
   selector:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
@@ -606,6 +707,79 @@ spec:
 192.168.1.100  kafka-ui.trip-service.local
 ```
 
+->
+  # C:\Windows\System32\drivers\etc\hosts
+  192.168.203.200  dev.trip-service.local
+  192.168.203.200  api-dev.trip-service.local
+  192.168.203.200  staging.trip-service.local
+  192.168.203.200  api-staging.trip-service.local
+  192.168.203.200  prod.trip-service.local
+  192.168.203.200  api-prod.trip-service.local
+
+  192.168.203.200  kafka-ui-dev.trip-service.local      # 개발환경
+  192.168.203.200  kafka-ui-staging.trip-service.local  # 스테이징환경
+  192.168.203.200  kafka-ui-prod.trip-service.local     # 프로덕션환경
+
+
+## 🎯 Phase 2 완료 확인사항
+
+✅ **성공적으로 완료된 단계들:**
+
+1. MetalLB 설치 및 IP 풀 설정
+
+# MetalLB 설치
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+
+# 설치 확인
+kubectl get pods -n metallb-system
+
+2. MetalLB IP 풀 적용
+
+# IP 주소 풀 적용
+kubectl apply -f k8s/base/metallb/ipaddresspool.yaml
+
+3. NGINX Ingress Controller 적용
+
+# NGINX Ingress Controller 적용 (ServiceAccount, RBAC 포함)
+kubectl apply -f k8s/base/ingress-controller/nginx-controller.yaml
+
+# 상태 확인
+kubectl get pods -n ingress-nginx
+kubectl get svc -n ingress-nginx
+
+# ⚠️ 주요 오류 및 해결방법:
+# 1. ServiceAccount 누락: "serviceaccount not found"
+#    해결: ServiceAccount, ClusterRole, ClusterRoleBinding 모두 포함 필수
+# 2. CrashLoopBackOff: "cannot get resource pods"
+#    해결: ClusterRole에 pods에 대한 "get" 권한 추가
+# 3. EndpointSlice 경고: "endpointslices.discovery.k8s.io is forbidden"
+#    해결: discovery.k8s.io/endpointslices 권한 추가 (선택사항)
+
+4. Ingress 규칙 적용
+
+# 기본 Ingress 규칙 적용
+kubectl apply -f k8s/base/ingress/trip-service-ingress.yaml
+
+  🎯 확인해야 할 상태
+
+  # 전체 상태 확인
+  kubectl get all -n metallb-system
+  kubectl get all -n ingress-nginx
+
+  # External IP 할당 확인 (192.168.203.200이 나와야 함)
+  kubectl get svc -n ingress-nginx
+
+  # MetalLB IP 확인 (192.168.203.200이 나와야 함)
+  kubectl get svc ingress-nginx -n ingress-nginx
+
+## ✅ **최종 확인 결과**
+```
+NAME            TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)
+ingress-nginx   LoadBalancer   10.111.221.63   192.168.203.200   80:30549/TCP,443:31457/TCP
+```
+
+**Phase 2 완료!** 이제 Phase 3으로 진행 가능합니다.
+
 ### 📝 Phase 3: 데이터베이스 및 인프라 서비스
 
 #### 3-1. MySQL 매니페스트
@@ -696,6 +870,51 @@ spec:
 - **Secret 분리**: 민감한 정보(패스워드)를 코드와 분리하여 보안 강화
 - **ConfigMap으로 초기화**: 기존 init-db.sql을 활용하여 초기 데이터 설정
 
+**k8s/base/mysql/configmap.yaml**
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-script
+data:
+  init.sql: |
+    -- Trip Service Database Initialization
+    CREATE DATABASE IF NOT EXISTS trip_service;
+    USE trip_service;
+
+    -- Currency exchange rates table
+    CREATE TABLE IF NOT EXISTS exchange_rates (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        from_currency VARCHAR(3) NOT NULL,
+        to_currency VARCHAR(3) NOT NULL,
+        rate DECIMAL(10,4) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_currencies (from_currency, to_currency)
+    );
+
+    -- Insert sample exchange rates
+    INSERT INTO exchange_rates (from_currency, to_currency, rate) VALUES
+    ('USD', 'KRW', 1350.50),
+    ('EUR', 'KRW', 1450.25),
+    ('JPY', 'KRW', 9.15),
+    ('CNY', 'KRW', 185.75)
+    ON DUPLICATE KEY UPDATE rate = VALUES(rate);
+
+    -- Users table
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Insert sample users
+    INSERT INTO users (username, email) VALUES
+    ('testuser1', 'test1@trip-service.com'),
+    ('testuser2', 'test2@trip-service.com')
+    ON DUPLICATE KEY UPDATE email = VALUES(email);
+```
+
 #### 3-2. MongoDB 매니페스트
 
 **k8s/base/mongodb/deployment.yaml**
@@ -745,7 +964,148 @@ spec:
           name: mongodb-init-script
 ```
 
-#### 3-3. Kafka 클러스터
+**k8s/base/mongodb/service.yaml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+spec:
+  selector:
+    app: mongodb
+  ports:
+  - port: 27017
+    targetPort: 27017
+  type: ClusterIP
+```
+
+**k8s/base/mongodb/pvc.yaml**
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+```
+
+**k8s/base/mongodb/configmap.yaml**
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-init-script
+data:
+  init.js: |
+    // Trip Service MongoDB Initialization
+    db = db.getSiblingDB('trip_service');
+
+    // Create collections and indexes
+    db.trip_history.createIndex({ "user_id": 1, "created_at": -1 });
+    db.trip_history.createIndex({ "status": 1 });
+
+    // Insert sample trip history data
+    db.trip_history.insertMany([
+      {
+        user_id: "testuser1",
+        trip_name: "Tokyo Trip",
+        destination: "Tokyo, Japan",
+        start_date: new Date("2024-03-15"),
+        end_date: new Date("2024-03-20"),
+        total_amount: 1500,
+        currency: "USD",
+        status: "completed",
+        created_at: new Date()
+      }
+    ]);
+
+    // User preferences collection
+    db.user_preferences.createIndex({ "user_id": 1 }, { unique: true });
+
+    print("Trip Service MongoDB initialization completed!");
+```
+
+#### 3-3. Redis 설정
+
+**k8s/base/redis/deployment.yaml**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.0
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+```
+
+**k8s/base/redis/service.yaml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP
+```
+
+#### 3-4. Secrets 설정
+
+**k8s/base/secrets.yaml**
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+type: Opaque
+data:
+  root-password: dHJpcC1zZXJ2aWNlLXJvb3Q=  # trip-service-root (base64)
+  user-password: dHJpcC1zZXJ2aWNlLXVzZXI=  # trip-service-user (base64)
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-secret
+type: Opaque
+data:
+  root-password: dHJpcC1zZXJ2aWNlLW1vbmdv  # trip-service-mongo (base64)
+```
+
+**📋 Secret 생성 이유**:
+- **보안**: 패스워드를 코드와 분리하여 보안 강화
+- **Base64 인코딩**: Kubernetes Secret 표준 형식
+- **환경별 분리**: 나중에 환경별로 다른 패스워드 설정 가능
+
+#### 3-5. Kafka 클러스터
 
 **k8s/base/kafka/zookeeper.yaml**
 ```yaml
@@ -835,9 +1195,182 @@ spec:
     targetPort: 9092
 ```
 
+**k8s/base/kafka/kafka-ui.yaml**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  labels:
+    app: kafka-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      containers:
+      - name: kafka-ui
+        image: provectuslabs/kafka-ui:latest
+        env:
+        - name: KAFKA_CLUSTERS_0_NAME
+          value: "trip-service-kafka"
+        - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+          value: "kafka-service:9092"
+        - name: KAFKA_CLUSTERS_0_ZOOKEEPER
+          value: "zookeeper-service:2181"
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui-service
+spec:
+  selector:
+    app: kafka-ui
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+```
+
 **📋 생성 이유**:
 - **이벤트 기반 아키텍처**: 서비스 간 비동기 통신을 위한 메시지 큐
 - **확장성**: 향후 서비스 추가 시 이벤트 기반으로 쉽게 연동 가능
+- **관리 도구**: Kafka UI로 토픽, 메시지, 컨슈머 등 모니터링 가능
+
+#### 3-6. Phase 3 배포 명령어
+
+**필수 파일들을 먼저 생성:**
+```bash
+# 1. Secrets 적용 (가장 먼저)
+kubectl apply -f k8s/base/secrets.yaml
+
+# 2. 데이터베이스 적용
+kubectl apply -f k8s/base/mysql/
+kubectl apply -f k8s/base/mongodb/
+kubectl apply -f k8s/base/redis/
+
+# 3. Kafka 클러스터 적용 (순서 중요)
+kubectl apply -f k8s/base/kafka/zookeeper.yaml
+kubectl apply -f k8s/base/kafka/kafka.yaml
+kubectl apply -f k8s/base/kafka/kafka-ui.yaml
+
+# 4. 상태 확인
+kubectl get pods # 확인 목적: 파드(컨테이너) 실행 상태
+
+```
+  확인 목적: 파드(컨테이너) 실행 상태
+  NAME                                       READY   STATUS    RESTARTS   AGE
+  mysql-7b8c4d4f8-abc12                     1/1     Running   0          2m
+  mongodb-6f9d8c5b7-def34                   1/1     Running   0          2m
+  redis-5c7b8a9d6-ghi56                     1/1     Running   0          2m
+  kafka-8d9c7b6a5-jkl78                     1/1     Running   0          1m
+  zookeeper-4e6f8c9d2-mno90                 1/1     Running   0          2m
+  kafka-ui-9f8e7d6c5-pqr12                  1/1     Running   0          1m
+```
+kubectl get svc # 확인 목적: 서비스(네트워크) 연결 상태
+
+```
+  확인 목적: 서비스(네트워크) 연결 상태
+  NAME               TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)
+  mysql-service      ClusterIP      10.96.45.123     <none>        3306/TCP
+  mongodb-service    ClusterIP      10.96.78.234     <none>        27017/TCP
+  redis-service      ClusterIP      10.96.12.345     <none>        6379/TCP
+  kafka-service      ClusterIP      10.96.56.456     <none>        9092/TCP
+  kafka-ui-service   ClusterIP      10.96.89.567     <none>        8080/TCP
+```
+```
+kubectl get pvc # 확인 목적: 스토리지(저장공간) 할당 상태
+```
+  확인 목적: 스토리지(저장공간) 할당 상태
+  NAME          STATUS   VOLUME                     CAPACITY   ACCESS MODES
+  mysql-pvc     Bound    pvc-abc123-def456-ghi789   10Gi       RWO
+  mongodb-pvc   Bound    pvc-jkl012-mno345-pqr678   10Gi       RWO
+
+```
+```
+
+**배포 순서가 중요한 이유:**
+- Secrets → 데이터베이스에서 패스워드 참조
+- Zookeeper → Kafka가 Zookeeper에 의존
+- PVC → 스토리지 할당 시간 필요
+
+#### 3-7. ConfigMap 문제 해결
+
+**⚠️ 주요 문제:** ConfigMap 누락으로 인한 ContainerCreating 상태
+
+**오류 메시지:**
+```
+MountVolume.SetUp failed for volume "init-script" : configmap "mysql-init-script" not found
+MountVolume.SetUp failed for volume "init-script" : configmap "mongodb-init-script" not found
+```
+
+**해결 방법:**
+```bash
+# 1. 기존 파드 삭제
+kubectl delete -f k8s/base/mysql/deployment.yaml
+kubectl delete -f k8s/base/mongodb/deployment.yaml
+
+# 2. ConfigMap 먼저 적용
+kubectl apply -f k8s/base/mysql/configmap.yaml
+kubectl apply -f k8s/base/mongodb/configmap.yaml
+
+# 3. 데이터베이스 재배포
+kubectl apply -f k8s/base/mysql/
+kubectl apply -f k8s/base/mongodb/
+```
+
+## ✅ **Phase 3 완료 확인 결과**
+
+**최종 상태 확인:**
+```bash
+kubectl get pods
+NAME                         READY   STATUS    RESTARTS   AGE
+kafka-75b77bdcdc-nmkkc       1/1     Running   0          18m
+kafka-ui-7887468d89-zhgx9    1/1     Running   0          18m
+mongodb-6c8488b766-79ll6     1/1     Running   0          105s
+mysql-55fb74df5c-kx76d       1/1     Running   0          110s
+redis-6d95787666-w7lv7       1/1     Running   0          18m
+zookeeper-6fd7fb5bc5-6hpr5   1/1     Running   0          18m
+```
+
+**서비스 상태:**
+```bash
+kubectl get svc
+NAME                TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)     AGE
+kafka-service       ClusterIP   10.106.107.1     <none>        9092/TCP    18m
+kafka-ui-service    ClusterIP   10.96.238.113    <none>        8080/TCP    18m
+mongodb-service     ClusterIP   10.103.42.207    <none>        27017/TCP   19m
+mysql-service       ClusterIP   10.110.45.123    <none>        3306/TCP    19m
+redis-service       ClusterIP   10.104.78.234    <none>        6379/TCP    18m
+zookeeper-service   ClusterIP   10.105.12.345    <none>        2181/TCP    18m
+```
+
+**스토리지 공간 할당 상태:**
+```bash
+kubectl get pvc
+NAME          STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+mongodb-pvc   Bound    pvc-995fb10c-095c-4bde-9a6d-c51e83f2ab39   10Gi       RWO            hostpath       <unset>                 19m
+mysql-pvc     Bound    pvc-77675a87-37b9-4e44-95ce-464faa65137d   10Gi       RWO            hostpath       <unset>                 19m
+```
+
+**🎉 Phase 3 성공적으로 완료!**
+- ✅ 모든 데이터베이스 서비스 실행 중
+- ✅ 초기화 스크립트로 샘플 데이터 생성
+- ✅ 서비스 간 내부 통신 준비 완료
 
 ### 📝 Phase 4: 애플리케이션 서비스
 
@@ -940,7 +1473,326 @@ spec:
 - **자동 확장**: HPA로 트래픽 증가에 대응
 - **헬스체크**: 문제 발생 시 자동 복구
 
-#### 4-2. Frontend Service
+**k8s/base/services/currency-service/service.yaml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: currency-service
+spec:
+  selector:
+    app: currency-service
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+```
+
+**k8s/base/services/currency-service/hpa.yaml**
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: currency-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: currency-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+```
+
+#### 4-2. History Service
+
+**k8s/base/services/history-service/deployment.yaml**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: history-service
+  labels:
+    app: history-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: history-service
+  template:
+    metadata:
+      labels:
+        app: history-service
+    spec:
+      containers:
+      - name: history-service
+        image: trip-service/history-service:latest
+        envFrom:
+        - configMapRef:
+            name: trip-service-config
+        - secretRef:
+            name: trip-service-secrets
+        ports:
+        - containerPort: 8000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+```
+
+**k8s/base/services/history-service/service.yaml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: history-service
+spec:
+  selector:
+    app: history-service
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+```
+
+**k8s/base/services/history-service/hpa.yaml**
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: history-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: history-service
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+```
+
+#### 4-3. Ranking Service
+
+**k8s/base/services/ranking-service/deployment.yaml**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ranking-service
+  labels:
+    app: ranking-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ranking-service
+  template:
+    metadata:
+      labels:
+        app: ranking-service
+    spec:
+      containers:
+      - name: ranking-service
+        image: trip-service/ranking-service:latest
+        envFrom:
+        - configMapRef:
+            name: trip-service-config
+        - secretRef:
+            name: trip-service-secrets
+        ports:
+        - containerPort: 8000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+```
+
+**k8s/base/services/ranking-service/service.yaml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ranking-service
+spec:
+  selector:
+    app: ranking-service
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+```
+
+**k8s/base/services/ranking-service/hpa.yaml**
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ranking-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ranking-service
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+```
+
+#### 4-4. DataIngestor CronJob (배치 작업)
+
+> 💡 **아키텍처 개선**: DataIngestor는 배치 작업 특성상 Deployment보다 CronJob이 적합합니다.
+> - **리소스 효율성**: 실행 시에만 파드 생성, 완료 후 자동 정리 (대폭적인 리소스 절약)
+> - **명확한 스케줄링**: Kubernetes 네이티브 cron 스케줄링 활용
+> - **안정성 향상**: 격리된 실행, 자동 재시도, 히스토리 관리
+
+**k8s/base/services/dataingestor-service/cronjob.yaml**
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dataingestor-cronjob
+  labels:
+    app: dataingestor-service
+spec:
+  # 5분마다 실행 (*/5 * * * *)
+  schedule: "*/5 * * * *"
+
+  # 동시 실행 정책: 이전 Job이 완료되지 않으면 새 Job 실행 안 함
+  concurrencyPolicy: Forbid
+
+  # 성공한 Job 히스토리 보관 개수
+  successfulJobsHistoryLimit: 3
+
+  # 실패한 Job 히스토리 보관 개수
+  failedJobsHistoryLimit: 3
+
+  jobTemplate:
+    spec:
+      # Job 재시도 횟수
+      backoffLimit: 2
+
+      # Job 완료 대기 시간 (10분)
+      activeDeadlineSeconds: 600
+
+      template:
+        metadata:
+          labels:
+            app: dataingestor-service
+            job-type: data-collection
+        spec:
+          restartPolicy: OnFailure
+
+          containers:
+          - name: dataingestor
+            image: trip-service/dataingestor-service:latest
+            imagePullPolicy: Never
+
+            # single 모드로 실행 (한 번만 실행하고 종료)
+            command: ["python", "/app/service-dataingestor/main.py", "single"]
+
+            envFrom:
+            - configMapRef:
+                name: trip-service-config
+            - secretRef:
+                name: trip-service-secrets
+
+            env:
+            - name: EXECUTION_MODE
+              value: "cronjob"
+            - name: JOB_TYPE
+              value: "data-collection"
+
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "200m"
+              limits:
+                memory: "1Gi"
+                cpu: "1000m"
+
+            # 로그 볼륨 마운트
+            volumeMounts:
+            - name: logs
+              mountPath: /app/logs
+
+          volumes:
+          - name: logs
+            emptyDir: {}
+```
+
+**⚠️ 주요 변경사항:**
+- **Deployment → CronJob**: 웹 서비스가 아닌 배치 작업으로 정확히 분류
+- **Service 제거**: 외부 접근이 불필요한 배치 작업이므로 Service 불필요
+- **HPA 제거**: CronJob은 스케줄에 따라 실행되므로 오토스케일링 불필요
+- **스케줄링**: 5분마다 자동 실행, 필요시 수동 실행 가능
+
+#### 4-5. Frontend Service
 
 **k8s/base/services/frontend/deployment.yaml**
 ```yaml
@@ -979,6 +1831,199 @@ spec:
             memory: "256Mi"
             cpu: "200m"
 ```
+
+**k8s/base/services/frontend/service.yaml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+```
+
+**k8s/base/services/frontend/configmap.yaml**
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+data:
+  api-base-url: "http://api-dev.trip-service.local"  # 개발환경 기본값
+```
+
+**k8s/base/services/frontend/hpa.yaml**
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: 3
+  maxReplicas: 12  # Frontend는 트래픽 변동이 클 수 있음
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60  # Frontend는 더 낮은 임계값
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+#### 4-6. 서비스별 HPA 설정 분석
+
+**📊 서비스별 HPA 정책:**
+
+| 서비스 | Min | Max | CPU 임계값 | Memory 임계값 | 설정 이유 |
+|--------|-----|-----|-----------|--------------|----------|
+| **Currency Service** | 2 | 10 | 70% | 80% | 핵심 서비스, 균형잡힌 확장 |
+| **History Service** | 2 | 8 | 70% | 80% | 조회 중심, 적정 확장 |
+| **Ranking Service** | 2 | 8 | 70% | 80% | 조회 중심, 적정 확장 |
+| **DataIngestor** | 2 | 6 | 75% | 85% | 리소스 집약적, 제한적 확장 |
+| **Frontend** | 3 | 12 | 60% | 70% | 사용자 트래픽 변동 대응 |
+
+**HPA 정책 설계 원칙:**
+- **Frontend**: 사용자 트래픽이 가장 변동이 크므로 많은 확장 허용
+- **DataIngestor**: 메모리/CPU 집약적이므로 높은 임계값과 제한적 확장
+- **API 서비스들**: 균형잡힌 확장 정책으로 안정성과 성능 보장
+
+#### 4-7. Phase 4 배포 명령어
+
+**애플리케이션 서비스 배포:**
+**⚠️ 주의사항:**
+- 이미지가 아직 빌드되지 않았다면 `ImagePullBackOff` 오류 발생
+- `/health` 엔드포인트가 없다면 Health Check 실패 가능
+- 환경변수 설정이 필요할 수 있음
+- HPA 동작을 위해서는 Metrics Server가 필요 (Docker Desktop에는 기본 제공)
+```bash
+# 1. 모든 서비스 배포
+kubectl apply -f k8s/base/services/currency-service/
+kubectl apply -f k8s/base/services/history-service/
+kubectl apply -f k8s/base/services/ranking-service/
+kubectl apply -f k8s/base/services/dataingestor-service/cronjob.yaml
+kubectl apply -f k8s/base/services/frontend/
+
+# 2. 상태 확인
+kubectl get pods
+kubectl get svc
+kubectl get hpa  # HPA 상태 확인
+
+# 3. HPA 상세 정보 확인
+kubectl describe hpa currency-service-hpa
+kubectl describe hpa history-service-hpa
+kubectl describe hpa ranking-service-hpa
+# DataIngestor는 CronJob이므로 HPA 불필요
+kubectl describe hpa frontend-hpa
+
+# 4. 로그 확인 (문제 발생 시)
+kubectl logs -l app=currency-service
+kubectl logs -l app=history-service
+kubectl logs -l app=ranking-service
+kubectl logs -l app=frontend
+
+# 5. DataIngestor CronJob 관리
+# CronJob 상태 확인
+kubectl get cronjobs
+kubectl describe cronjob dataingestor-cronjob
+
+# 실행된 Job 목록 확인
+kubectl get jobs
+
+# 수동으로 Job 실행 (테스트용)
+kubectl create job dataingestor-manual --from=cronjob/dataingestor-cronjob
+
+# Job 로그 확인
+kubectl logs job/dataingestor-manual
+```
+
+####
+로컬 환경에서 수동으로 이미지를 빌드하고, 배포 테스트 진행 가능함
+🚀 실행 방법
+
+  PowerShell에서 실행 :
+  cd C:\mini_project\trip-service-local
+  .\scripts\build-and-deploy.ps1
+
+  Git Bash에서 실행 :
+  cd /c/mini_project/trip-service-local
+  bash scripts/build-and-deploy.sh
+
+#### 배포 재시작 명령어
+    Linux/macOS:
+  chmod +x scripts/redeploy-services.sh
+  ./scripts/redeploy-services.sh
+
+  Windows PowerShell:
+  .\scripts\redeploy-services.ps1
+
+  수동 실행 (단계별):
+  # 1. 기존 서비스 삭제
+  kubectl delete deployment currency-service history-service ranking-service frontend
+  kubectl delete cronjob dataingestor-cronjob  # DataIngestor CronJob 삭제
+  kubectl delete hpa currency-service-hpa history-service-hpa ranking-service-hpa frontend-hpa
+
+  # 2. 잠시 대기
+  sleep 10
+
+  # 3. 재배포
+  kubectl apply -f k8s/base/secrets.yaml
+  kubectl apply -f k8s/base/configmap.yaml
+  kubectl apply -f k8s/base/services/currency-service/
+  kubectl apply -f k8s/base/services/history-service/
+  kubectl apply -f k8s/base/services/ranking-service/
+  kubectl apply -f k8s/base/services/dataingestor-service/cronjob.yaml
+  kubectl apply -f k8s/base/services/frontend/
+
+  # 4. 상태 확인
+  kubectl get pods
+  kubectl get svc
+  kubectl get hpa
+
+#### 현재 서비스 접속 가능 여부
+  외부에서 접속하려면:
+
+  # MetalLB 외부 IP 확인
+  kubectl get svc nginx-ingress-controller
+
+  # Frontend 접속 (정상 작동 중)
+  # http://trip-service.local 또는 외부 IP로 접속 가능
+
+  # 서비스 Health Check
+  kubectl get svc
+
+**📊 예상 HPA 상태:**
+```bash
+kubectl get hpa
+NAME                      REFERENCE                         TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+currency-service-hpa      Deployment/currency-service       <unknown>/70%   2         10        2          1m
+history-service-hpa       Deployment/history-service        <unknown>/70%   2         8         2          1m
+ranking-service-hpa       Deployment/ranking-service        <unknown>/70%   2         8         2          1m
+# DataIngestor는 CronJob이므로 HPA 없음
+frontend-hpa              Deployment/frontend               <unknown>/60%   3         12        3          1m
+```
+
+**✅ Phase 4 완료 시 달성사항:**
+- 🚀 모든 마이크로서비스 배포 완료
+- 📈 자동 스케일링 (HPA) 설정 완료 (웹 서비스만)
+- ⏰ DataIngestor CronJob 배치 작업 스케줄링 (5분마다 실행)
+- 💡 **아키텍처 개선**: 대폭적인 리소스 절약 및 배치 작업 안정성 향상
+- 🔍 헬스체크 및 모니터링 준비
+- 🌐 서비스 간 통신 네트워크 구성
 
 ### 📝 Phase 5: 환경별 설정 (Kustomize)
 
@@ -1027,8 +2072,7 @@ replicas:
   count: 1
 - name: ranking-service
   count: 1
-- name: dataingestor-service
-  count: 1
+# dataingestor는 CronJob이므로 replicas 설정 불필요
 - name: frontend
   count: 2
 ```
@@ -1102,8 +2146,7 @@ replicas:
   count: 2
 - name: ranking-service
   count: 2
-- name: dataingestor-service
-  count: 2
+# dataingestor는 CronJob이므로 replicas 설정 불필요
 - name: frontend
   count: 5
 ```
@@ -1252,7 +2295,7 @@ pipeline {
 
         stage('Deploy to Dev') {
             steps {
-                triggerArgoCDSync('trip-service-dev')
+                triggerArgoCDSync('trip-currency-dev')
             }
         }
 
@@ -1261,7 +2304,7 @@ pipeline {
                 branch 'main'
             }
             steps {
-                triggerArgoCDSync('trip-service-staging')
+                triggerArgoCDSync('trip-currency-staging')
             }
         }
 
@@ -1271,7 +2314,7 @@ pipeline {
             }
             steps {
                 input message: 'Deploy to Production?', ok: 'Deploy'
-                triggerArgoCDSync('trip-service-prod')
+                triggerArgoCDSync('trip-currency-prod')
             }
         }
     }
@@ -1347,12 +2390,12 @@ def triggerArgoCDSync(appName) {
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: trip-service-dev
+  name: trip-currency-dev
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-org/trip-service-mono
+    repoURL: https://github.com/KORgosu/trip-currency-local
     targetRevision: main
     path: k8s/overlays/dev
   destination:
@@ -1372,12 +2415,12 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: trip-service-staging
+  name: trip-currency-staging
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-org/trip-service-mono
+    repoURL: https://github.com/KORgosu/trip-currency-local
     targetRevision: main
     path: k8s/overlays/staging
   destination:
@@ -1396,12 +2439,12 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: trip-service-prod
+  name: trip-currency-prod
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-org/trip-service-mono
+    repoURL: https://github.com/KORgosu/trip-currency-local
     targetRevision: v*
     path: k8s/overlays/prod
   destination:
@@ -1549,7 +2592,7 @@ kubectl describe resourcequota -n trip-service-dev
 #### 롤백 수행
 ```bash
 # ArgoCD를 통한 롤백
-argocd app rollback trip-service-prod --revision 10
+argocd app rollback trip-currency-prod --revision 10
 
 # kubectl을 통한 직접 롤백
 kubectl rollout undo deployment/currency-service -n trip-service-prod
@@ -1601,3 +2644,158 @@ kubectl rollout undo deployment/currency-service -n trip-service-prod
 - **보안 강화**: Pod Security Standards, OPA Gatekeeper 도입
 
 이 가이드를 따라 구현하면 확장 가능하고 운영하기 쉬운 Kubernetes 기반의 마이크로서비스 아키텍처를 구축할 수 있습니다.
+
+---
+
+## MetalLB 외부 접속 설정
+
+### MetalLB 설치 및 구성 확인
+MetalLB가 정상적으로 설치되어 있는지 확인:
+
+```bash
+# MetalLB 파드 상태 확인
+kubectl get pods -n metallb-system
+
+# IP 주소 풀 확인
+kubectl get ipaddresspool -n metallb-system
+
+# L2 Advertisement 확인
+kubectl get l2advertisements -n metallb-system
+```
+
+### 올바른 서비스 아키텍처 설정
+
+**중요**: 사용자는 프론트엔드에만 접속하고, 백엔드 서비스들은 클러스터 내부에서만 통신해야 합니다.
+
+- **Frontend**: NodePort 타입 (외부 접속용)
+- **Backend Services**: ClusterIP 타입 (클러스터 내부 통신용)
+
+### 외부 접속을 위한 프론트엔드 서비스 설정
+
+Docker Desktop 환경에서는 NodePort 타입을 사용하는 것이 가장 확실합니다:
+
+**k8s/base/services/frontend/service.yaml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
+  type: NodePort  # Docker Desktop 환경에서 외부 접속용
+```
+
+### 백엔드 서비스 설정 (ClusterIP 유지)
+
+백엔드 서비스들은 클러스터 내부 통신을 위해 ClusterIP 타입으로 유지:
+
+**k8s/base/services/currency-service/service.yaml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: currency-service
+spec:
+  selector:
+    app: currency-service
+  ports:
+  - port: 8000
+    targetPort: 8001
+  type: ClusterIP  # 클러스터 내부 통신용
+```
+
+**k8s/base/services/ranking-service/service.yaml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ranking-service
+spec:
+  selector:
+    app: ranking-service
+  ports:
+  - port: 8000
+    targetPort: 8002
+  type: ClusterIP  # 클러스터 내부 통신용
+```
+
+**k8s/base/services/history-service/service.yaml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: history-service
+spec:
+  selector:
+    app: history-service
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP  # 클러스터 내부 통신용
+```
+
+### 서비스 적용 및 확인
+
+```bash
+# 서비스 설정 적용
+kubectl apply -f k8s/base/services/frontend/service.yaml
+kubectl apply -f k8s/base/services/currency-service/service.yaml
+kubectl apply -f k8s/base/services/ranking-service/service.yaml
+kubectl apply -f k8s/base/services/history-service/service.yaml
+
+# 서비스 상태 확인
+kubectl get services
+```
+
+### 외부 접속 정보
+
+Docker Desktop 환경에서는 NodePort를 사용하는 것이 가장 확실합니다:
+
+- **Frontend**: `http://localhost:30793` (NodePort) - 사용자 접속용
+- **Backend Services**: 클러스터 내부에서만 접근 가능
+
+### 접속 테스트
+
+```bash
+# Frontend 접속 테스트 (NodePort 사용)
+curl -I http://localhost:30793
+# 또는 브라우저에서 http://localhost:30793 접속
+
+# 백엔드 서비스는 클러스터 내부에서만 접근 가능
+# 프론트엔드를 통해 간접적으로 접근
+```
+
+### 아키텍처 설명
+
+이 설정의 장점:
+
+1. **보안성**: 백엔드 서비스들이 외부에 노출되지 않아 보안이 강화됩니다.
+2. **성능**: 클러스터 내부 통신은 더 빠르고 효율적입니다.
+3. **관리 용이성**: 프론트엔드만 외부 접속을 관리하면 됩니다.
+4. **확장성**: 백엔드 서비스들을 독립적으로 확장할 수 있습니다.
+
+### 주의사항
+
+1. **Docker Desktop 환경**: Docker Desktop을 사용하는 경우 외부 접속이 제한될 수 있습니다.
+2. **네트워크 설정**: 실제 운영 환경에서는 방화벽 및 네트워크 정책을 적절히 설정해야 합니다.
+3. **보안**: 프론트엔드만 외부에 노출되므로 보안이 강화됩니다.
+4. **서비스 간 통신**: 백엔드 서비스들은 서비스 이름으로 클러스터 내부에서 통신합니다.
+
+### 문제 해결
+
+외부 접속이 되지 않는 경우:
+
+1. MetalLB 파드 상태 확인
+2. IP 주소 풀 설정 확인
+3. 노드 네트워크 설정 확인
+4. 방화벽 설정 확인
+
+```bash
+# MetalLB 로그 확인
+kubectl logs -n metallb-system -l app=metallb,component=speaker
+kubectl logs -n metallb-system -l app=metallb,component=controller
+```

@@ -89,7 +89,9 @@ __all__ = [
     "ExternalAPIError",
     "DataValidationError",
     "DataProcessingError",
+    "CalculationError",
     "MessagingError",
+    "SchedulerError",
     "get_http_status_code",
     
     # Utils (모든 유틸리티들)

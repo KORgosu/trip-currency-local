@@ -1,5 +1,5 @@
-# Trip Currency Shared Package v1.0.0
-git+https://github.com/KORgosu/shared_package_local.git@v1.0.0#egg=trip-currency-shared
+# Trip Currency Shared Package v1.0.0 (로컬 설치)
+-e ../package-shared
 
 # ===== Core Framework =====
 fastapi==0.104.1
@@ -8,7 +8,6 @@ pydantic==2.5.0
 pydantic-settings==2.1.0
 
 # ===== Database Drivers =====
-aiomysql==0.2.0                # MySQL async driver
 redis[hiredis]==5.0.1          # Redis with high-performance hiredis
 aioredis==2.0.1                # Redis async client
 motor==3.3.2                   # MongoDB async driver

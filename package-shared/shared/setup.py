@@ -38,7 +38,6 @@ setup(
         "Source Code": "https://github.com/KORgosu/shared_package_local",
     },
     packages=["shared"],
-    package_dir={"shared": "."},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",

@@ -168,7 +168,7 @@ class CurrencyProvider:
     async def _get_cached_rate(self, currency_code: str) -> Optional[Dict[str, Any]]:
         """Redis에서 캐시된 환율 조회"""
         try:
-            cache_key = f"rate:{currency_code}"
+            cache_key = f"rate:CurrencyCode.{currency_code}"
             cached_data = await self.redis_helper.get_hash(cache_key)
             
             if cached_data and "deal_base_rate" in cached_data:
@@ -232,7 +232,7 @@ class CurrencyProvider:
         # - set_hash: 실제 클러스터 엔드포인트로 캐싱
         # - TTL 10분으로 실시간성 유지
         try:
-            cache_key = f"rate:{currency_code}"
+            cache_key = f"rate:CurrencyCode.{currency_code}"
             
             cache_data = {
                 "currency_name": rate_data["currency_name"],
@@ -269,7 +269,7 @@ class CurrencyProvider:
             db_hits = 0
             
             # Redis에서 일괄 조회
-            cache_keys = [f"rate:{code}" for code in currency_codes]
+            cache_keys = [f"rate:CurrencyCode.{code}" for code in currency_codes]
             cached_data = await self.redis_helper.get_multiple_hashes(cache_keys)
             
             # 캐시된 데이터 처리
@@ -309,12 +309,12 @@ class CurrencyProvider:
         """
         try:
             if currency_code:
-                cache_key = f"rate:{currency_code}"
+                cache_key = f"rate:CurrencyCode.{currency_code}"
                 await self.redis_helper.delete(cache_key)
                 logger.info(f"Cache cleared for {currency_code}")
             else:
                 # 전체 환율 캐시 클리어
-                pattern = "rate:*"
+                pattern = "rate:CurrencyCode.*"
                 await self.redis_helper.delete_pattern(pattern)
                 logger.info("All rate cache cleared")
                 

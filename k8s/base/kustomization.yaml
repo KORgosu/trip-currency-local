@@ -3,16 +3,15 @@ kind: Kustomization
 
 resources:
 # Infrastructure
-- namespace.yaml
 - configmap.yaml
 - secrets.yaml
 
 # MetalLB
 - metallb/ipaddresspool.yaml
 
-# Ingress Controller
-- ingress-controller/rbac.yaml
-- ingress-controller/nginx-controller.yaml
+# Ingress Controller (별도 설치 필요)
+# - ingress-controller/rbac.yaml
+# - ingress-controller/nginx-controller.yaml
 
 # Ingress Rules
 - ingress/trip-service-ingress.yaml

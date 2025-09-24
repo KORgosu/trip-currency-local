@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import ExchangeRateChart from '../components/country/ExchangeRateChart';
 import CountryCard from '../components/country/CountryCard';
+import BackgroundEffect from '../components/common/BackgroundEffect';
 import useCurrencyData from '../hooks/useCurrencyData';
 import apiService from '../services/api';
 
@@ -10,28 +11,32 @@ const ComparisonContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  background: white;
+  background: transparent;
   min-height: 100vh;
+  color: #ffd700;
+  position: relative;
+  z-index: 1;
 `;
 
 const PageTitle = styled.h1`
-  color: #2c3e50;
+  color: #ffd700;
   margin-bottom: 2rem;
   text-align: center;
 `;
 
 const ChartSection = styled.section`
-  background: white;
+  background: #2a2a2a;
   padding: 2rem;
   border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border: 2px solid #ffd700;
+  box-shadow: 0 2px 10px rgba(255, 215, 0, 0.2);
   margin-bottom: 2rem;
   min-height: 500px;
   position: relative;
 `;
 
 const SectionTitle = styled.h2`
-  color: #2c3e50;
+  color: #ffd700;
   margin-bottom: 1.5rem;
 `;
 
@@ -42,45 +47,49 @@ const CountriesGrid = styled.div`
 `;
 
 const BackButton = styled.button`
-  background-color: #667eea;
-  color: white;
-  border: none;
+  background-color: #2a2a2a;
+  color: #ffd700;
+  border: 2px solid #ffd700;
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
   cursor: pointer;
   margin-bottom: 2rem;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
   
   &:hover {
-    background-color: #5a6fd8;
+    background-color: #ffd700;
+    color: #1a1a1a;
   }
 `;
 
 const NoCountriesMessage = styled.div`
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: #ffd700;
   font-size: 1.1rem;
 `;
 
 const RefreshButton = styled.button`
-  background-color: #28a745;
-  color: white;
-  border: none;
+  background-color: #2a2a2a;
+  color: #ffd700;
+  border: 2px solid #ffd700;
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
   cursor: pointer;
   margin-left: 1rem;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
   
   &:hover {
-    background-color: #218838;
+    background-color: #ffd700;
+    color: #1a1a1a;
   }
   
   &:disabled {
-    background-color: #6c757d;
+    background-color: #666666;
+    color: #999999;
+    border-color: #666666;
     cursor: not-allowed;
   }
 `;
@@ -103,25 +112,26 @@ const TimeRangeSelector = styled.div`
 
 const TimeButton = styled.button`
   padding: 0.4rem 0.8rem;
-  border: 1px solid #e1e8ed;
-  background: white;
+  border: 1px solid #ffd700;
+  background: #2a2a2a;
   border-radius: 5px;
   cursor: pointer;
   transition: all 0.3s;
-  color: #000000;
+  color: #ffd700;
   font-size: 0.9rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.2);
   
   &:hover {
-    background-color: #f8f9fa;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    background-color: #ffd700;
+    color: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
   }
   
   &.active {
-    background-color: #667eea;
-    color: white;
-    border-color: #667eea;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    background-color: #ffd700;
+    color: #1a1a1a;
+    border-color: #ffd700;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
   }
 `;
 
@@ -232,6 +242,7 @@ const ComparisonPage = () => {
 
   return (
     <ComparisonContainer>
+      <BackgroundEffect />
       <HeaderActions>
         <BackButton onClick={handleBackToHome}>
           ← 홈으로 돌아가기

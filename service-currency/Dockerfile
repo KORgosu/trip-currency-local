@@ -17,11 +17,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 공유 패키지 복사 및 설치
-COPY ../package-shared /app/package-shared
+COPY package-shared /app/package-shared
 RUN pip install -e /app/package-shared
 
 # 애플리케이션 코드 복사
-COPY . /app
+COPY service-currency /app
 
 # 포트 노출
 EXPOSE 8000
@@ -31,4 +31,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # 애플리케이션 실행
-CMD ["python", "service-currency/main.py"]
+CMD ["python", "main.py"]

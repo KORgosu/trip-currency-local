@@ -6,14 +6,17 @@ const RankingItemContainer = styled.div`
   align-items: center;
   padding: 0.75rem;
   border-radius: 8px;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #ffd700;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
   margin-bottom: 0.5rem;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
   
   &:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(255, 215, 0, 0.4);
+    transform: translateY(-2px);
+    border-color: #ffed4e;
   }
 `;
 
@@ -27,12 +30,13 @@ const RankNumber = styled.div`
   font-weight: bold;
   font-size: 0.9rem;
   margin-right: 1rem;
+  border: 2px solid #ffd700;
   
   ${props => {
-    if (props.rank === 1) return 'background: linear-gradient(135deg, #ffd700, #ffed4e); color: #8b6914;';
-    if (props.rank === 2) return 'background: linear-gradient(135deg, #c0c0c0, #e8e8e8); color: #666;';
-    if (props.rank === 3) return 'background: linear-gradient(135deg, #cd7f32, #daa520); color: white;';
-    return 'background: #f8f9fa; color: #666;';
+    if (props.rank === 1) return 'background: linear-gradient(135deg, #ffd700, #ffed4e); color: #000; box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);';
+    if (props.rank === 2) return 'background: linear-gradient(135deg, #c0c0c0, #e8e8e8); color: #000;';
+    if (props.rank === 3) return 'background: linear-gradient(135deg, #cd7f32, #daa520); color: #fff;';
+    return 'background: rgba(255, 215, 0, 0.1); color: #ffd700;';
   }}
 `;
 
@@ -44,15 +48,17 @@ const CountryInfo = styled.div`
 
 const CountryName = styled.div`
   font-weight: 600;
-  color: #2c3e50;
+  color: #ffd700;
   font-size: 1rem;
   margin-bottom: 0.25rem;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 `;
 
 const CountryCode = styled.div`
   font-size: 0.8rem;
-  color: #666;
+  color: #ffed4e;
   text-transform: uppercase;
+  opacity: 0.8;
 `;
 
 const SelectionCount = styled.div`
@@ -71,30 +77,48 @@ const CountRow = styled.div`
 const CountNumber = styled.div`
   font-size: 1.1rem;
   font-weight: bold;
-  color: #667eea;
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 `;
 
 const TotalCountNumber = styled.div`
   font-size: 0.9rem;
   font-weight: bold;
-  color: #95a5a6;
+  color: #ffed4e;
+  opacity: 0.8;
 `;
 
 const CountLabel = styled.div`
   font-size: 0.65rem;
-  color: #666;
+  color: #ffd700;
   margin-top: 0.1rem;
+  opacity: 0.7;
 `;
 
 const TotalCountLabel = styled.div`
   font-size: 0.6rem;
-  color: #999;
+  color: #ffed4e;
   margin-top: 0.1rem;
+  opacity: 0.6;
 `;
 
 const TrendingIcon = styled.span`
   margin-left: 0.5rem;
   font-size: 0.8rem;
+  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
+  animation: bounce 2s infinite;
+  
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+      transform: translateY(0);
+    }
+    40% {
+      transform: translateY(-3px);
+    }
+    60% {
+      transform: translateY(-2px);
+    }
+  }
 `;
 
 const RankingItem = ({ ranking, rank }) => {

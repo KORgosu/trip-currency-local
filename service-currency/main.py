@@ -18,6 +18,7 @@ API 엔드포인트:
 import os
 import sys
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 # 상위 디렉토리의 shared 모듈 import를 위한 경로 추가
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -59,8 +60,8 @@ async def lifespan(app: FastAPI):
     global currency_provider
     
     try:
-        # 설정 초기화
-        config = init_config("currency-service")
+        # 설정 가져오기 (이미 초기화됨)
+        config = get_config()
         logger.info(f"Currency Service starting, version: {config.service_version}")
         
         # 데이터베이스 초기화
@@ -82,13 +83,18 @@ async def lifespan(app: FastAPI):
     finally:
         # 정리 작업
         await stop_kafka_consumer()
-        db_manager = get_db_manager()
-        await db_manager.close()
+        try:
+            db_manager = get_db_manager()
+            await db_manager.close()
+        except RuntimeError:
+            # 데이터베이스가 초기화되지 않은 경우 무시
+            pass
         logger.info("Currency Service stopped")
 
 
 # 설정을 미리 초기화하여 CORS 미들웨어에서 사용 가능하게 함
-config = init_config("currency-service")
+config = init_config("service-currency")
+_config_initialized = True
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -188,14 +194,68 @@ async def general_exception_handler(request, exc: Exception):
 # API 엔드포인트들
 @app.get("/health")
 async def health_check():
-    """헬스 체크"""
-    return SuccessResponse(
-        data={
+    """헬스 체크 - 데이터베이스 연결 상태 포함"""
+    try:
+        health_status = {
             "status": "healthy",
-            "service": "currency-service",
-            "version": get_config().service_version
+            "service": "service-currency",
+            "version": get_config().service_version,
+            "timestamp": datetime.utcnow().isoformat() + 'Z',
+            "checks": {
+                "database": "unknown",
+                "redis": "unknown",
+                "kafka": "unknown"
+            }
         }
-    )
+        
+        # 데이터베이스 연결 상태 확인
+        try:
+            if currency_provider:
+                # MySQL 연결 테스트
+                test_query = "SELECT 1 as test"
+                await currency_provider.mysql_helper.execute_query(test_query)
+                health_status["checks"]["database"] = "healthy"
+                
+                # Redis 연결 테스트
+                await currency_provider.redis_helper.ping()
+                health_status["checks"]["redis"] = "healthy"
+            else:
+                health_status["checks"]["database"] = "unavailable"
+                health_status["checks"]["redis"] = "unavailable"
+        except Exception as e:
+            logger.warning(f"Database/Redis health check failed: {e}")
+            health_status["checks"]["database"] = "unhealthy"
+            health_status["checks"]["redis"] = "unhealthy"
+            health_status["status"] = "degraded"
+        
+        # Kafka 연결 상태 확인
+        try:
+            if kafka_consumer:
+                health_status["checks"]["kafka"] = "healthy"
+            else:
+                health_status["checks"]["kafka"] = "unavailable"
+        except Exception as e:
+            logger.warning(f"Kafka health check failed: {e}")
+            health_status["checks"]["kafka"] = "unhealthy"
+        
+        # 전체 상태 결정
+        if health_status["checks"]["database"] == "unhealthy" or health_status["checks"]["redis"] == "unhealthy":
+            health_status["status"] = "unhealthy"
+        
+        return SuccessResponse(data=health_status)
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "status": "unhealthy",
+                "service": "service-currency",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat() + 'Z'
+            }
+        )
 
 
 @app.get("/api/v1/currencies/latest", response_model=SuccessResponse)
@@ -398,7 +458,7 @@ async def start_kafka_consumer():
             "cache_invalidation"
         ]
         
-        kafka_consumer = MessageConsumer(topics, "currency-service")
+        kafka_consumer = MessageConsumer(topics, "service-currency")
         await kafka_consumer.initialize()
         
         # 백그라운드에서 메시지 소비 시작
@@ -550,7 +610,7 @@ def lambda_handler(event, context):
 if __name__ == "__main__":
     # 환경 변수에서 설정 로드
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8001"))  # Currency Service는 8001 포트
+    port = int(os.getenv("PORT", "8000"))  # Currency Service는 8000 포트
     
     logger.info(f"Starting Currency Service on {host}:{port}")
     

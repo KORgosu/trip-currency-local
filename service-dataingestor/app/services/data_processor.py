@@ -208,7 +208,7 @@ class DataProcessor:
                     WHERE currency_code = %s
                         AND source = %s
                         AND recorded_at > %s
-                        AND ABS((deal_base_rate - %s) / %s) < 0.001  -- 0.1% 이내 차이
+                        AND ABS(deal_base_rate - %s) < (%s * 0.001)  -- 0.1%% 이내 차이
                 """
 
                 deal_rate = float(item.deal_base_rate)

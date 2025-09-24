@@ -4,7 +4,17 @@
 // currency_db 데이터베이스로 전환
 db = db.getSiblingDB('currency_db');
 
-// 사용자 생성 (admin 사용자로 currency_db에 접근 권한 부여)
+// trip_user 사용자 생성 (애플리케이션용)
+db.createUser({
+  user: 'trip_user',
+  pwd: 'trip-service-mongo',
+  roles: [
+    { role: 'readWrite', db: 'currency_db' },
+    { role: 'dbAdmin', db: 'currency_db' }
+  ]
+});
+
+// admin 사용자 생성 (관리용)
 db.createUser({
   user: 'admin',
   pwd: 'password',
@@ -31,5 +41,7 @@ db.country_clicks.insertOne({
 
 print('MongoDB initialization completed successfully');
 print('Database: currency_db');
-print('User: admin');
-print('Password: password');
+print('Application User: trip_user');
+print('Application Password: trip-service-mongo');
+print('Admin User: admin');
+print('Admin Password: password');

@@ -5,34 +5,32 @@ namespace: trip-service-dev
 
 resources:
 - ../../base
+- namespace.yaml
 
 patchesStrategicMerge:
 - configmap.yaml
-- resource-quota.yaml
 - ingress-patch.yaml
 
 images:
-- name: trip-service/currency-service
+- name: trip-service/service-currency
   newTag: dev-latest
-- name: trip-service/history-service
+- name: trip-service/service-history
   newTag: dev-latest
-- name: trip-service/ranking-service
+- name: trip-service/service-ranking
   newTag: dev-latest
-- name: trip-service/dataingestor-service
+- name: trip-service/service-dataingestor
   newTag: dev-latest
 - name: trip-service/frontend
   newTag: dev-latest
 
 replicas:
-- name: currency-service
+- name: service-currency
   count: 1
-- name: history-service
+- name: service-history
   count: 1
-- name: ranking-service
+- name: service-ranking
   count: 1
-- name: dataingestor-service
+- name: service-dataingestor
   count: 1
-- name: frontend
-  count: 1
-- name: nginx-ingress-controller
+- name: service-frontend
   count: 1

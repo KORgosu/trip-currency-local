@@ -32,13 +32,13 @@ const ChartContainer = styled.div`
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  background-color: #f8f9fa;
+  background-color: #2a2a2a;
   border-radius: 8px;
   position: relative;
 `;
 
 const ChartTitle = styled.h3`
-  color: #2c3e50;
+  color: #ffd700;
   margin-bottom: 1rem;
   text-align: center;
   position: relative;
@@ -333,11 +333,11 @@ const ExchangeRateChart = ({ currencyCode = 'USD', timeRange = 'realtime' }) => 
           datasets: [{
             label: `${currencyCode}/KRW`,
             data: chartData,
-            borderColor: '#667eea',
-            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderColor: '#ffd700',
+            backgroundColor: 'rgba(255, 215, 0, 0.1)',
             borderWidth: 2,
-            pointBackgroundColor: '#667eea',
-            pointBorderColor: '#667eea',
+            pointBackgroundColor: '#ffd700',
+            pointBorderColor: '#ffd700',
             pointRadius: chartPoints.map(point => point.showPoint ? 3 : 0),
             pointHoverRadius: chartPoints.map(point => point.showPoint ? 5 : 0),
             tension: 0.4,
@@ -384,6 +384,11 @@ const ExchangeRateChart = ({ currencyCode = 'USD', timeRange = 'realtime' }) => 
       tooltip: {
         mode: 'index',
         intersect: false,
+        backgroundColor: '#2a2a2a',
+        titleColor: '#ffd700',
+        bodyColor: '#ffd700',
+        borderColor: '#ffd700',
+        borderWidth: 1,
         callbacks: {
           label: function(context) {
             return `${currencyCode}/KRW: ${context.parsed.y.toLocaleString()}원`;
@@ -394,23 +399,37 @@ const ExchangeRateChart = ({ currencyCode = 'USD', timeRange = 'realtime' }) => 
     scales: {
       x: {
         display: true,
+        grid: {
+          color: '#ffd700',
+          opacity: 0.3
+        },
+        ticks: {
+          color: '#ffd700'
+        },
         title: {
           display: true,
-          text: timeRange === 'realtime' || timeRange === '1d' ? '시간' : '날짜'
+          text: timeRange === 'realtime' || timeRange === '1d' ? '시간' : '날짜',
+          color: '#ffd700'
         }
       },
       y: {
         display: true,
-        title: {
-          display: true,
-          text: '환율 (원)'
+        grid: {
+          color: '#ffd700',
+          opacity: 0.3
         },
-        beginAtZero: false,
         ticks: {
+          color: '#ffd700',
           callback: function(value) {
             return value.toLocaleString() + '원';
           }
-        }
+        },
+        title: {
+          display: true,
+          text: '환율 (원)',
+          color: '#ffd700'
+        },
+        beginAtZero: false
       }
     },
     interaction: {

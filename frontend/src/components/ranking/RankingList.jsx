@@ -4,6 +4,8 @@ import RankingItem from './RankingItem';
 
 const RankingListContainer = styled.div`
   width: 100%;
+  position: relative;
+  z-index: 1;
 `;
 
 const LoadingContainer = styled.div`
@@ -11,8 +13,12 @@ const LoadingContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  color: #666;
+  color: #ffd700;
   font-size: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+  margin: 1rem 0;
 `;
 
 const ErrorContainer = styled.div`
@@ -21,58 +27,69 @@ const ErrorContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  color: #d63031;
-  background: #ffe6e6;
+  color: #ffd700;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #ffd700;
   border-radius: 8px;
   margin: 1rem 0;
 `;
 
 const RetryButton = styled.button`
-  background: #d63031;
-  color: white;
-  border: none;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  color: #000;
+  border: 2px solid #ffd700;
   border-radius: 5px;
   padding: 0.5rem 1rem;
   margin-top: 1rem;
   cursor: pointer;
-  transition: background-color 0.3s;
+  font-weight: bold;
+  transition: all 0.3s ease;
   
   &:hover {
-    background: #b71c1c;
+    background: linear-gradient(135deg, #ffed4e 0%, #ffd700 100%);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    transform: translateY(-1px);
   }
 `;
 
 const EmptyContainer = styled.div`
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: #ffd700;
   font-size: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+  margin: 1rem 0;
 `;
 
 const LastUpdated = styled.div`
   text-align: center;
   font-size: 0.8rem;
-  color: #666;
+  color: #ffd700;
   margin-bottom: 1rem;
   padding: 0.5rem;
-  background: #f8f9fa;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #ffd700;
   border-radius: 5px;
 `;
 
 const RefreshButton = styled.button`
   background: none;
-  border: none;
-  color: #666;
+  border: 2px solid #ffd700;
+  color: #ffd700;
   cursor: pointer;
   font-size: 0.8rem;
   padding: 0.25rem 0.5rem;
   border-radius: 3px;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   margin-left: 0.5rem;
   
   &:hover {
-    background-color: #e9ecef;
-    color: #333;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #000;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+    transform: rotate(180deg);
   }
 `;
 

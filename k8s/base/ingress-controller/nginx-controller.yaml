@@ -1,10 +1,4 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/instance: ingress-nginx
+# Namespace는 각 환경에서 별도로 관리
 ---
 # NGINX Ingress Controller용 ConfigMap
 apiVersion: v1

@@ -110,10 +110,8 @@ class RankingScheduler:
         wait_seconds = (next_reset - current_time).total_seconds()
         
         logger.info(
-            f"Waiting for next daily reset",
-            current_time=current_time.isoformat(),
-            next_reset=next_reset.isoformat(),
-            wait_seconds=wait_seconds
+            f"Waiting for next daily reset - Current: {current_time.isoformat()}, "
+            f"Next reset: {next_reset.isoformat()}, Wait: {wait_seconds}s"
         )
         
         # 대기 중에도 종료 신호 체크

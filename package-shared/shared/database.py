@@ -184,6 +184,16 @@ class RedisHelper:
             return await self.client.delete(*keys)
         return 0
     
+    async def ping(self) -> bool:
+        """Redis 연결 상태 확인"""
+        if not self.client:
+            await self.connect()
+        try:
+            result = await self.client.ping()
+            return result
+        except Exception:
+            return False
+    
     async def close(self):
         """연결 종료"""
         if self.client:
@@ -202,7 +212,7 @@ class MongoDBHelper:
         """MongoDB 연결"""
         config = get_config()
         try:
-            connection_string = f"mongodb://{config.mongodb.user}:{config.mongodb.password}@{config.mongodb.host}:{config.mongodb.port}/"
+            connection_string = f"mongodb://{config.mongodb.user}:{config.mongodb.password}@{config.mongodb.host}:{config.mongodb.port}/?authSource=admin"
             self.client = AsyncIOMotorClient(connection_string)
             self.db = self.client[self.database_name]
             
@@ -235,19 +245,19 @@ class DynamoDBHelper:
         """DynamoDB 초기화 (로컬에서는 Mock)"""
         logger.info("DynamoDB helper initialized (Mock mode for local development)")
     
-    async def put_item(self, table_name: str, item: Dict[str, Any]) -> bool:
+    async def put_item(self, item: Dict[str, Any]) -> bool:
         """아이템 저장 (Mock)"""
-        logger.debug(f"Mock DynamoDB put_item: {table_name}, {item}")
+        logger.debug(f"Mock DynamoDB put_item: {item}")
         return True
     
-    async def get_item(self, table_name: str, key: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def get_item(self, key: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """아이템 조회 (Mock)"""
-        logger.debug(f"Mock DynamoDB get_item: {table_name}, {key}")
+        logger.debug(f"Mock DynamoDB get_item: {key}")
         return None
     
-    async def query(self, table_name: str, **kwargs) -> List[Dict[str, Any]]:
+    async def query(self, **kwargs) -> List[Dict[str, Any]]:
         """쿼리 실행 (Mock)"""
-        logger.debug(f"Mock DynamoDB query: {table_name}, {kwargs}")
+        logger.debug(f"Mock DynamoDB query: {kwargs}")
         return []
     
     async def scan(self, **kwargs):
@@ -276,24 +286,34 @@ class DatabaseManager:
     
     async def initialize(self):
         """모든 데이터베이스 초기화"""
+        import os
+
         try:
-            # MySQL 초기화
-            self.mysql = MySQLHelper()
-            await self.mysql.connect()
-            
+            # MySQL 초기화 (SKIP_MYSQL_INIT 환경 변수가 true가 아닌 경우에만)
+            if os.getenv("SKIP_MYSQL_INIT", "false").lower() != "true":
+                self.mysql = MySQLHelper()
+                await self.mysql.connect()
+                logger.info("MySQL initialized")
+            else:
+                logger.info("MySQL initialization skipped")
+
             # Redis 초기화
             self.redis = RedisHelper()
             await self.redis.connect()
-            
-            # MongoDB 초기화
-            self.mongodb = MongoDBHelper()
-            await self.mongodb.connect()
-            
+
+            # MongoDB 초기화 (SKIP_MONGODB_INIT 환경 변수가 true가 아닌 경우에만)
+            if os.getenv("SKIP_MONGODB_INIT", "false").lower() != "true":
+                self.mongodb = MongoDBHelper()
+                await self.mongodb.connect()
+                logger.info("MongoDB initialized")
+            else:
+                logger.info("MongoDB initialization skipped")
+
             # DynamoDB 초기화 (Mock)
             self.dynamodb = DynamoDBHelper()
             await self.dynamodb.initialize()
-            
-            logger.info("All databases initialized successfully")
+
+            logger.info("Database initialization completed")
         except Exception as e:
             logger.error(f"Failed to initialize databases: {e}")
             raise

@@ -20,6 +20,7 @@ import sys
 import time
 import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 # 상위 디렉토리의 shared 모듈 import를 위한 경로 추가
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -68,8 +69,8 @@ async def lifespan(app: FastAPI):
     global selection_recorder, ranking_provider, mongodb_service, ranking_scheduler
     
     try:
-        # 설정 초기화
-        config = init_config("ranking-service")
+        # 설정 가져오기 (이미 초기화됨)
+        config = get_config()
         logger.info(f"Ranking Service starting - version: {config.service_version}")
         
         # 데이터베이스 초기화
@@ -118,7 +119,8 @@ async def lifespan(app: FastAPI):
 
 
 # 설정을 미리 초기화하여 CORS 미들웨어에서 사용 가능하게 함
-config = init_config("ranking-service")
+config = init_config("service-ranking")
+_config_initialized = True
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -251,14 +253,60 @@ async def general_exception_handler(request, exc: Exception):
 # API 엔드포인트들
 @app.get("/health")
 async def health_check():
-    """헬스 체크"""
-    return SuccessResponse(
-        data={
+    """헬스 체크 - 데이터베이스 연결 상태 포함"""
+    try:
+        health_status = {
             "status": "healthy",
-            "service": "ranking-service",
-            "version": get_config().service_version
+            "service": "service-ranking",
+            "version": get_config().service_version,
+            "timestamp": datetime.utcnow().isoformat() + 'Z',
+            "checks": {
+                "mongodb": "unknown",
+                "scheduler": "unknown"
+            }
         }
-    )
+        
+        # MongoDB 연결 상태 확인
+        try:
+            mongodb_service = await get_mongodb_service()
+            if mongodb_service and mongodb_service.connected:
+                health_status["checks"]["mongodb"] = "healthy"
+            else:
+                health_status["checks"]["mongodb"] = "unavailable"
+        except Exception as e:
+            logger.warning(f"MongoDB health check failed: {e}")
+            health_status["checks"]["mongodb"] = "unhealthy"
+            health_status["status"] = "degraded"
+        
+        # 스케줄러 상태 확인
+        try:
+            scheduler = await get_ranking_scheduler()
+            if scheduler and scheduler.running:
+                health_status["checks"]["scheduler"] = "healthy"
+            else:
+                health_status["checks"]["scheduler"] = "unavailable"
+        except Exception as e:
+            logger.warning(f"Scheduler health check failed: {e}")
+            health_status["checks"]["scheduler"] = "unhealthy"
+        
+        # 전체 상태 결정
+        if health_status["checks"]["mongodb"] == "unhealthy":
+            health_status["status"] = "unhealthy"
+        
+        return SuccessResponse(data=health_status)
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "status": "unhealthy",
+                "service": "service-ranking",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat() + 'Z'
+            }
+        )
 
 
 @app.post("/api/v1/rankings/click", response_model=SuccessResponse, status_code=201)
@@ -872,7 +920,7 @@ async def update_ranking_counts(payload: UpdateRankingRequest):
 if __name__ == "__main__":
     # 환경 변수에서 설정 로드
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8002"))  # Ranking Service는 8002 포트
+    port = int(os.getenv("PORT", "8000"))  # 모든 서비스 표준 8000 포트
     
     logger.info(f"Starting Ranking Service on {host}:{port}")
     

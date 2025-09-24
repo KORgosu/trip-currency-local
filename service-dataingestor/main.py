@@ -180,13 +180,43 @@ async def run_scheduler():
 
 async def run_kubernetes_cronjob():
     """Kubernetes CronJob 실행 (한 번 실행 후 종료)"""
-    # ... (기존 run_kubernetes_cronjob 함수 내용은 그대로 유지) ...
-    pass
+    correlation_id = SecurityUtils.generate_correlation_id()
+    set_correlation_id(correlation_id)
+    
+    logger.info("Starting Kubernetes CronJob execution", correlation_id=correlation_id)
+    
+    try:
+        await initialize_services()
+        collection_results = await data_collector.collect_all_data()
+        
+        for result in collection_results:
+            if result.success:
+                await data_processor.process_exchange_rate_data(result)
+            else:
+                logger.warning("Collection failed", source=result.source, error=result.error_message)
+        
+        logger.info("Kubernetes CronJob execution completed successfully")
+        
+    except Exception as e:
+        logger.error("Kubernetes CronJob execution failed", error=e, exc_info=True)
+        raise
+    finally:
+        await cleanup_services()
 
 
 def main():
     """메인 함수"""
-    mode = os.getenv("EXECUTION_MODE", "scheduler")
+    import argparse
+    
+    # 명령행 인자 파싱
+    parser = argparse.ArgumentParser(description="Data Ingestor Service")
+    parser.add_argument("mode", nargs="?", choices=["single", "scheduler", "cronjob"], 
+                       default=None, help="Execution mode")
+    
+    args = parser.parse_args()
+    
+    # 환경 변수 또는 명령행 인자로 모드 결정
+    mode = args.mode or os.getenv("EXECUTION_MODE", "scheduler")
     logger.info(f"Starting in '{mode}' mode.")
     
     try:

@@ -18,15 +18,15 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 공유 패키지 복사 및 설치
-COPY ../package-shared /app/package-shared
+COPY package-shared /app/package-shared
 RUN pip install -e /app/package-shared
 
 # 애플리케이션 코드 복사
-COPY . /app
+COPY service-dataingestor /app
 
 # 헬스체크 (스케줄러 모드에서는 프로세스 체크)
 HEALTHCHECK --interval=60s --timeout=10s --start-period=10s --retries=3 \
     CMD pgrep -f "python.*main.py" || exit 1
 
 # 애플리케이션 실행
-CMD ["python", "service-dataingestor/main.py"]
+CMD ["python", "main.py"]

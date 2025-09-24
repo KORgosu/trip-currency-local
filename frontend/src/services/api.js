@@ -1,7 +1,7 @@
 // API 서비스 레이어
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
-const RANKING_API_BASE_URL = import.meta.env.VITE_RANKING_API_BASE_URL || 'http://localhost:8002';
-const HISTORY_API_BASE_URL = import.meta.env.VITE_HISTORY_API_BASE_URL || 'http://localhost:8003';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1/currencies';
+const RANKING_API_BASE_URL = import.meta.env.VITE_RANKING_API_BASE_URL || '/api/v1/rankings';
+const HISTORY_API_BASE_URL = import.meta.env.VITE_HISTORY_API_BASE_URL || '/api/v1/history';
 
 class ApiService {
   constructor() {
@@ -461,7 +461,7 @@ class ApiService {
   // 환율 조회
   async getExchangeRates(symbols = 'USD,JPY,EUR,GBP,CNY,AUD,CAD,CHF,SGD,HKD', base = 'KRW') {
     const symbolsParam = Array.isArray(symbols) ? symbols.join(',') : symbols;
-    const response = await this.request(`/api/v1/currencies/latest?symbols=${symbolsParam}&base=${base}`);
+    const response = await this.request(`/latest?symbols=${symbolsParam}&base=${base}`);
     
     // 환율 데이터 유효성 검사
     if (response.success && response.data && response.data.rates) {
@@ -504,19 +504,19 @@ class ApiService {
   
   // 랭킹 조회
   async getRankings(period = 'daily', limit = 10, offset = 0) {
-    return this.rankingRequest(`/api/v1/rankings?limit=${limit}&offset=${offset}`);
+    return this.rankingRequest(`?limit=${limit}&offset=${offset}`);
   }
 
   // 나라 클릭 기록
   async recordCountryClick(country) {
-    return this.rankingRequest(`/api/v1/rankings/click?country=${encodeURIComponent(country)}`, {
+    return this.rankingRequest(`/click?country=${encodeURIComponent(country)}`, {
       method: 'POST'
     });
   }
 
   // 사용자 선택 기록 (기존 호환성 유지)
   async recordSelection(selectionData) {
-    return this.rankingRequest('/api/v1/rankings/selections', {
+    return this.rankingRequest('/selections', {
       method: 'POST',
       body: JSON.stringify(selectionData)
     });
@@ -524,12 +524,12 @@ class ApiService {
 
   // 국가별 통계 조회
   async getCountryStats(countryCode, period = '7d') {
-    return this.rankingRequest(`/api/v1/rankings/stats/${countryCode}?period=${period}`);
+    return this.rankingRequest(`/stats/${countryCode}?period=${period}`);
   }
 
   // 랭킹 계산 트리거 (관리자용)
   async triggerRankingCalculation(period) {
-    return this.rankingRequest(`/api/v1/rankings/calculate?period=${period}`, {
+    return this.rankingRequest(`/calculate?period=${period}`, {
       method: 'POST'
     });
   }
@@ -538,23 +538,23 @@ class ApiService {
   
   // 환율 이력 조회
   async getExchangeRateHistory(period, target, base = 'KRW', interval = 'daily') {
-    return this.historyRequest(`/api/v1/history?period=${period}&target=${target}&base=${base}&interval=${interval}`);
+    return this.historyRequest(`?period=${period}&target=${target}&base=${base}&interval=${interval}`);
   }
 
   // 환율 통계 조회
   async getExchangeRateStats(target, period = '6m', base = 'KRW') {
-    return this.historyRequest(`/api/v1/history/stats?target=${target}&period=${period}&base=${base}`);
+    return this.historyRequest(`/stats?target=${target}&period=${period}&base=${base}`);
   }
 
   // 환율 비교 분석
   async compareCurrencies(targets, period = '1m', base = 'KRW') {
     const targetsParam = Array.isArray(targets) ? targets.join(',') : targets;
-    return this.historyRequest(`/api/v1/history/compare?targets=${targetsParam}&period=${period}&base=${base}`);
+    return this.historyRequest(`/compare?targets=${targetsParam}&period=${period}&base=${base}`);
   }
 
   // 환율 예측
   async getExchangeRateForecast(currencyCode, days = 7, base = 'KRW') {
-    return this.historyRequest(`/api/v1/history/forecast/${currencyCode}?days=${days}&base=${base}`);
+    return this.historyRequest(`/forecast/${currencyCode}?days=${days}&base=${base}`);
   }
 
   // History Service 헬스 체크
