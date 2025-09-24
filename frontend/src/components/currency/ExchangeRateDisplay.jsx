@@ -2,9 +2,10 @@ import React from 'react';
 import styled from 'styled-components';
 
 const ExchangeRateContainer = styled.div`
-  background: white;
+  background: #2a2a2a;
+  border: 2px solid #ffd700;
   border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(255, 215, 0, 0.2);
   padding: 2rem;
   width: 100%;
   
@@ -27,7 +28,7 @@ const HeaderIcon = styled.span`
 const HeaderTitle = styled.h2`
   font-size: 1.1rem;
   font-weight: bold;
-  color: #2c3e50;
+  color: #ffd700;
   margin: 0;
 `;
 
@@ -42,16 +43,16 @@ const RateGrid = styled.div`
 `;
 
 const RateCard = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: #1a1a1a;
+  border: 1px solid #ffd700;
   border-radius: 8px;
   padding: 1rem;
   transition: all 0.3s ease;
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+    border-color: #ffed4e;
   }
 `;
 
@@ -68,24 +69,24 @@ const CurrencyFlag = styled.span`
 
 const CurrencyCode = styled.span`
   font-weight: bold;
-  color: #667eea;
+  color: #ffd700;
   font-size: 0.9rem;
 `;
 
 const CurrencyName = styled.span`
-  color: #666;
+  color: #ffed4e;
   font-size: 0.8rem;
 `;
 
 const ExchangeRate = styled.div`
   font-size: 1.1rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #ffd700;
 `;
 
 const CacheInfo = styled.div`
   font-size: 0.7rem;
-  color: #28a745;
+  color: #ffed4e;
   margin-top: 0.5rem;
   display: flex;
   align-items: center;
@@ -250,11 +251,12 @@ const ExchangeRateDisplay = ({
       {exchangeRates.timestamp && (
         <div style={{ 
           textAlign: 'center', 
-          color: '#666', 
+          color: '#ffed4e', 
           fontSize: '0.8rem', 
           marginTop: '1rem',
           padding: '0.5rem',
-          background: '#f8f9fa',
+          background: '#1a1a1a',
+          border: '1px solid #ffd700',
           borderRadius: '4px'
         }}>
           마지막 업데이트: {new Date(exchangeRates.timestamp).toLocaleString('ko-KR')}
