@@ -124,12 +124,21 @@ patches:
           memory: "512Mi"
           cpu: "500m"
 
-# 프로덕션 환경 설정
-configMapGenerator:
-- name: trip-service-config
-  literals:
-  - environment=production
-  - log-level=info
-  - api-base-url=https://api.trip-service.com
-  - history-api-url=https://history.trip-service.com
+# 프로덕션 환경 설정 패치
+- target:
+    kind: ConfigMap
+    name: trip-service-config
+  patch: |-
+    - op: add
+      path: /data/ENVIRONMENT
+      value: "production"
+    - op: add
+      path: /data/LOG_LEVEL
+      value: "info"
+    - op: add
+      path: /data/API_BASE_URL
+      value: "https://api.trip-service.com"
+    - op: add
+      path: /data/HISTORY_API_URL
+      value: "https://history.trip-service.com"
 
