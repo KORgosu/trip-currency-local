@@ -50,7 +50,7 @@ patches:
       value: IfNotPresent
 - target:
     kind: CronJob
-    name: dataingestor-service
+    name: service-dataingestor-cronjob
   patch: |-
     - op: replace
       path: /spec/jobTemplate/spec/template/spec/containers/0/image
