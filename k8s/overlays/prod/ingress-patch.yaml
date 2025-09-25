@@ -1,59 +1,50 @@
-# 프로덕션 환경용 Ingress 설정
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: trip-service-main-ingress
+  name: trip-service-ingress
+  namespace: trip-service-prod
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"   # 프로덕션에서는 HTTPS 강제
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # SSL 인증서 자동 발급
-    nginx.ingress.kubernetes.io/rate-limit: "100"      # Rate limiting
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
     nginx.ingress.kubernetes.io/rate-limit-window: "1m"
 spec:
   tls:
   - hosts:
-    - trip-service.local
-    - api.trip-service.local
-    secretName: trip-service-tls-prod
+    - trip-service.com
+    - api.trip-service.com
+    - history.trip-service.com
+    secretName: trip-service-tls
   rules:
-  - host: trip-service.local      # 실제 프로덕션 도메인
+  - host: trip-service.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: frontend-service
+            name: service-frontend
             port:
               number: 80
-
-  - host: api.trip-service.local  # 실제 프로덕션 API 도메인
+  - host: api.trip-service.com
     http:
       paths:
-      - path: /currency
+      - path: /
         pathType: Prefix
         backend:
           service:
-            name: currency-service
+            name: service-currency
             port:
               number: 8000
-      - path: /history
+  - host: history.trip-service.com
+    http:
+      paths:
+      - path: /
         pathType: Prefix
         backend:
           service:
-            name: history-service
-            port:
-              number: 8000
-      - path: /ranking
-        pathType: Prefix
-        backend:
-          service:
-            name: ranking-service
-            port:
-              number: 8000
-      - path: /dataingestor
-        pathType: Prefix
-        backend:
-          service:
-            name: dataingestor-service
+            name: service-history
             port:
               number: 8000

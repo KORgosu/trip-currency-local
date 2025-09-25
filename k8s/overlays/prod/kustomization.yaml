@@ -1,0 +1,97 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: trip-service-prod
+
+resources:
+- ../../base
+
+patches:
+- target:
+    kind: Deployment
+    name: service-frontend
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/image
+      value: trip-service/service-frontend:prod-latest
+- target:
+    kind: Deployment
+    name: service-currency
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/image
+      value: trip-service/service-currency:prod-latest
+- target:
+    kind: Deployment
+    name: service-history
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/image
+      value: trip-service/service-history:prod-latest
+
+# 프로덕션 환경 설정
+configMapGenerator:
+- name: trip-service-config
+  literals:
+  - environment=production
+  - log-level=info
+  - api-base-url=https://api.trip-service.com
+  - history-api-url=https://history.trip-service.com
+
+# 프로덕션 리소스 제한
+patchesStrategicMerge:
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: service-frontend
+  spec:
+    replicas: 3
+    template:
+      spec:
+        containers:
+        - name: service-frontend
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: service-currency
+  spec:
+    replicas: 3
+    template:
+      spec:
+        containers:
+        - name: service-currency
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: service-history
+  spec:
+    replicas: 3
+    template:
+      spec:
+        containers:
+        - name: service-history
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
