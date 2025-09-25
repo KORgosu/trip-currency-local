@@ -131,7 +131,7 @@ patches:
   patch: |-
     - op: add
       path: /data/ENVIRONMENT
-      value: "production"
+      value: "prod"
     - op: add
       path: /data/LOG_LEVEL
       value: "info"
