@@ -58,16 +58,6 @@ patches:
     - op: replace
       path: /spec/jobTemplate/spec/template/spec/containers/0/imagePullPolicy
       value: IfNotPresent
-
-# 프로덕션 환경 설정
-configMapGenerator:
-- name: trip-service-config
-  literals:
-  - environment=production
-  - log-level=info
-  - api-base-url=https://api.trip-service.com
-  - history-api-url=https://history.trip-service.com
-
 # 프로덕션 리소스 제한 및 레플리카 설정
 - target:
     kind: Deployment
@@ -133,4 +123,13 @@ configMapGenerator:
         limits:
           memory: "512Mi"
           cpu: "500m"
+
+# 프로덕션 환경 설정
+configMapGenerator:
+- name: trip-service-config
+  literals:
+  - environment=production
+  - log-level=info
+  - api-base-url=https://api.trip-service.com
+  - history-api-url=https://history.trip-service.com
 
