@@ -68,60 +68,69 @@ configMapGenerator:
   - api-base-url=https://api.trip-service.com
   - history-api-url=https://history.trip-service.com
 
-# 프로덕션 리소스 제한
-patchesStrategicMerge:
-- |-
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
+# 프로덕션 리소스 제한 및 레플리카 설정
+- target:
+    kind: Deployment
     name: service-frontend
-  spec:
-    replicas: 3
-    template:
-      spec:
-        containers:
-        - name: service-frontend
-          resources:
-            requests:
-              memory: "256Mi"
-              cpu: "100m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
-- |-
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
+  patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 3
+    - op: replace
+      path: /spec/template/spec/containers/0/resources
+      value:
+        requests:
+          memory: "256Mi"
+          cpu: "100m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+- target:
+    kind: Deployment
     name: service-currency
-  spec:
-    replicas: 3
-    template:
-      spec:
-        containers:
-        - name: service-currency
-          resources:
-            requests:
-              memory: "256Mi"
-              cpu: "100m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
-- |-
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
+  patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 3
+    - op: replace
+      path: /spec/template/spec/containers/0/resources
+      value:
+        requests:
+          memory: "256Mi"
+          cpu: "100m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+- target:
+    kind: Deployment
     name: service-history
-  spec:
-    replicas: 3
-    template:
-      spec:
-        containers:
-        - name: service-history
-          resources:
-            requests:
-              memory: "256Mi"
-              cpu: "100m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
+  patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 3
+    - op: replace
+      path: /spec/template/spec/containers/0/resources
+      value:
+        requests:
+          memory: "256Mi"
+          cpu: "100m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+- target:
+    kind: Deployment
+    name: service-ranking
+  patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 3
+    - op: replace
+      path: /spec/template/spec/containers/0/resources
+      value:
+        requests:
+          memory: "256Mi"
+          cpu: "100m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
 
