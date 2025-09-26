@@ -325,4 +325,4 @@ trip-service-local/
 - 이벤트: `kubectl get events -n trip-service-dev`
 - 서비스 상태: `kubectl get all -n trip-service-dev`
 
-# Jenkins 빌드 테스트 - 새로운 Docker Hub Access Token 테스트
+# Jenkins 빌드 테스트 - Jenkins credentials 강제 업데이트 후 테스트
