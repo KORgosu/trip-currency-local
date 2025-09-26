@@ -5,8 +5,7 @@ pipeline {
     agent { label 'ec2-worker-ubuntu' }
     
     environment {
-        // Docker Registry 설정 (운영환경용)
-        DOCKER_REGISTRY = ''  // Docker Hub (빈 문자열로 기본 레지스트리 사용)
+        // Docker Registry 설정 (운영환경용) - Docker Hub는 기본 레지스트리 사용
         DOCKERHUB_USERNAME = "${env.DOCKER_HUB_USERNAME}"  // Jenkins 환경 변수에서 가져옴
         IMAGE_NAME = 'service'
 
@@ -132,7 +131,7 @@ pipeline {
                                 }
 
                                 // Docker Hub에 푸시 (Access Token 사용)
-                                docker.withRegistry("https://${DOCKER_REGISTRY}", 'dockerhub-credentials') {
+                                docker.withRegistry('', 'dockerhub-credentials') {
                                     image.push()
                                     image.push('latest')
                                 }
@@ -157,7 +156,7 @@ pipeline {
                                 def image = docker.build("${DOCKERHUB_USERNAME}/${IMAGE_NAME}-currency:${PROD_TAG}")
 
                                 // Docker Hub에 푸시 (Access Token 사용)
-                                docker.withRegistry("https://${DOCKER_REGISTRY}", 'dockerhub-credentials') {
+                                docker.withRegistry('', 'dockerhub-credentials') {
                                     image.push()
                                     image.push('latest')
                                 }
@@ -182,7 +181,7 @@ pipeline {
                                 def image = docker.build("${DOCKERHUB_USERNAME}/${IMAGE_NAME}-history:${PROD_TAG}")
 
                                 // Docker Hub에 푸시 (Access Token 사용)
-                                docker.withRegistry("https://${DOCKER_REGISTRY}", 'dockerhub-credentials') {
+                                docker.withRegistry('', 'dockerhub-credentials') {
                                     image.push()
                                     image.push('latest')
                                 }
@@ -207,7 +206,7 @@ pipeline {
                                 def image = docker.build("${DOCKERHUB_USERNAME}/${IMAGE_NAME}-ranking:${PROD_TAG}")
 
                                 // Docker Hub에 푸시 (Access Token 사용)
-                                docker.withRegistry("https://${DOCKER_REGISTRY}", 'dockerhub-credentials') {
+                                docker.withRegistry('', 'dockerhub-credentials') {
                                     image.push()
                                     image.push('latest')
                                 }
@@ -232,7 +231,7 @@ pipeline {
                                 def image = docker.build("${DOCKERHUB_USERNAME}/${IMAGE_NAME}-dataingestor:${PROD_TAG}")
 
                                 // Docker Hub에 푸시 (Access Token 사용)
-                                docker.withRegistry("https://${DOCKER_REGISTRY}", 'dockerhub-credentials') {
+                                docker.withRegistry('', 'dockerhub-credentials') {
                                     image.push()
                                     image.push('latest')
                                 }
