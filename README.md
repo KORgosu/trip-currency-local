@@ -322,3 +322,4 @@ trip-service-local/
 - Pod 로그: `kubectl logs <pod-name> -n trip-service-dev`
 - 이벤트: `kubectl get events -n trip-service-dev`
 - 서비스 상태: `kubectl get all -n trip-service-dev`
+
