@@ -368,20 +368,22 @@ pipeline {
         
         success {
             echo "✅ 파이프라인 성공! Docker Hub와 ECR 이미지 푸시 완료"
-            slackSend(
-                channel: '#production',
-                color: 'good',
-                message: "✅ ${env.JOB_NAME} - ${env.BUILD_NUMBER} 빌드 및 이미지 푸시 성공!\n이미지 태그: ${PROD_TAG}"
-            )
+            // Slack 알림은 Jenkins에서 별도 설정 필요
+            // slackSend(
+            //     channel: '#production',
+            //     color: 'good',
+            //     message: "✅ ${env.JOB_NAME} - ${env.BUILD_NUMBER} 빌드 및 이미지 푸시 성공!\n이미지 태그: ${PROD_TAG}"
+            // )
         }
         
         failure {
             echo "❌ 파이프라인 실패! 빌드 로그를 확인하세요."
-            slackSend(
-                channel: '#production',
-                color: 'danger',
-                message: "❌ ${env.JOB_NAME} - ${env.BUILD_NUMBER} 빌드 또는 이미지 푸시 실패!\n로그 확인: ${env.BUILD_URL}"
-            )
+            // Slack 알림은 Jenkins에서 별도 설정 필요
+            // slackSend(
+            //     channel: '#production',
+            //     color: 'danger',
+            //     message: "❌ ${env.JOB_NAME} - ${env.BUILD_NUMBER} 빌드 또는 이미지 푸시 실패!\n로그 확인: ${env.BUILD_URL}"
+            // )
         }
     }
 }
