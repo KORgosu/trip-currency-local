@@ -105,6 +105,13 @@ pipeline {
         }
         
         stage('Docker Build & Push') {
+            steps {
+                echo "⚠️ Docker Pipeline 플러그인이 설치되지 않았습니다."
+                echo "Jenkins 관리 → 플러그인 관리 → 'Docker Pipeline' 플러그인을 설치하세요."
+                echo "설치 후 이 단계가 정상 작동합니다."
+            }
+            // Docker Pipeline 플러그인 설치 후 아래 주석을 해제하세요
+            /*
             parallel {
                 stage('Frontend Image') {
                     steps {
@@ -231,6 +238,7 @@ pipeline {
                     }
                 }
             }
+            */
         }
         
         // Deploy to Production Kubernetes - 주석 처리됨
