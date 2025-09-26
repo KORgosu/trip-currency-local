@@ -197,14 +197,7 @@ const ComparisonPage = () => {
       'GQ': 'XAF', 'GA': 'XAF', 'ST': 'STN', 'BJ': 'XOF', 'BF': 'XOF',
       'CI': 'XOF', 'GM': 'GMD', 'GN': 'GNF', 'GW': 'XOF', 'LR': 'LRD',
       'ML': 'XOF', 'MR': 'MRU', 'NE': 'XOF', 'SN': 'XOF', 'SL': 'SLE',
-      'TG': 'XOF', 'CV': 'CVE', 'GH': 'GHS', 'NG': 'NGN',
-      
-      // 기타
-      'AF': 'AFN', 'PK': 'PKR', 'BD': 'BDT', 'LK': 'LKR', 'NP': 'NPR',
-      'MM': 'MMK', 'KH': 'KHR', 'LA': 'LAK', 'BN': 'BND', 'FJ': 'FJD',
-      'PG': 'PGK', 'SB': 'SBD', 'VU': 'VUV', 'WS': 'WST', 'TO': 'TOP',
-      'KI': 'AUD', 'TV': 'AUD', 'NR': 'AUD', 'PW': 'USD', 'FM': 'USD',
-      'MH': 'USD'
+      'TG': 'XOF', 'CV': 'CVE', 'GH': 'GHS', 'NG': 'NGN'
     };
     return countryToCurrency[countryCode] || 'USD';
   };
