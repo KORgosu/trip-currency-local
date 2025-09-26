@@ -226,7 +226,7 @@ pipeline {
         //             def k8sAvailable = false
         //             try {
         //                 sh '''
-        //                     # Kubernetes 클러스터 연결 확인
+        //                     // Kubernetes 클러스터 연결 확인
         //                     kubectl cluster-info
         //                     kubectl get nodes
         //                 '''
@@ -242,18 +242,18 @@ pipeline {
         //                 if (env.BRANCH_NAME == 'main') {
         //                     // 프로덕션 환경 배포
         //                     sh '''
-        //                         # 운영 Kubernetes 클러스터 확인
+        //                         // 운영 Kubernetes 클러스터 확인
         //                         kubectl get nodes
         //                         kubectl get pods -n trip-service-prod
         //
-        //                         # 이미지 태그 업데이트
+        //                         // 이미지 태그 업데이트
         //                         kubectl set image deployment/service-frontend service-frontend=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-frontend:${PROD_TAG} -n trip-service-prod
         //                         kubectl set image deployment/service-currency service-currency=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-currency:${PROD_TAG} -n trip-service-prod
         //                         kubectl set image deployment/service-history service-history=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-history:${PROD_TAG} -n trip-service-prod
         //                         kubectl set image deployment/service-ranking service-ranking=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-ranking:${PROD_TAG} -n trip-service-prod
         //                         kubectl set image deployment/service-dataingestor service-dataingestor=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-dataingestor:${PROD_TAG} -n trip-service-prod
         //
-        //                         # 배포 상태 확인
+        //                         // 배포 상태 확인
         //                         kubectl rollout status deployment/service-frontend -n trip-service-prod
         //                         kubectl rollout status deployment/service-currency -n trip-service-prod
         //                         kubectl rollout status deployment/service-history -n trip-service-prod
@@ -263,18 +263,18 @@ pipeline {
         //                 } else {
         //                     // 개발 환경 배포
         //                     sh '''
-        //                         # 개발 Kubernetes 클러스터 확인
+        //                         // 개발 Kubernetes 클러스터 확인
         //                         kubectl get nodes
         //                         kubectl get pods -n trip-service-dev
         //
-        //                         # 이미지 태그 업데이트
+        //                         // 이미지 태그 업데이트
         //                         kubectl set image deployment/service-frontend service-frontend=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-frontend:${DEV_TAG} -n trip-service-dev
         //                         kubectl set image deployment/service-currency service-currency=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-currency:${DEV_TAG} -n trip-service-dev
         //                         kubectl set image deployment/service-history service-history=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-history:${DEV_TAG} -n trip-service-dev
         //                         kubectl set image deployment/service-ranking service-ranking=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-ranking:${DEV_TAG} -n trip-service-dev
         //                         kubectl set image deployment/service-dataingestor service-dataingestor=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-dataingestor:${DEV_TAG} -n trip-service-dev
         //
-        //                         # 배포 상태 확인
+        //                         // 배포 상태 확인
         //                         kubectl rollout status deployment/service-frontend -n trip-service-dev
         //                         kubectl rollout status deployment/service-currency -n trip-service-dev
         //                         kubectl rollout status deployment/service-history -n trip-service-dev
@@ -308,7 +308,7 @@ pipeline {
         //             def k8sAvailable = false
         //             try {
         //                 sh '''
-        //                     # Kubernetes 클러스터 연결 확인
+        //                     // Kubernetes 클러스터 연결 확인
         //                     kubectl cluster-info
         //                     kubectl get nodes
         //                 '''
@@ -323,11 +323,11 @@ pipeline {
         //                 if (env.BRANCH_NAME == 'main') {
         //                     // 프로덕션 환경 헬스 체크
         //                     sh '''
-        //                         # 서비스 헬스 체크
+        //                         // 서비스 헬스 체크
         //                         kubectl get pods -n trip-service-prod
         //                         kubectl get services -n trip-service-prod
         //
-        //                         # API 엔드포인트 테스트
+        //                         // API 엔드포인트 테스트
         //                         kubectl run health-check --image=curlimages/curl -i --tty --rm -n trip-service-prod -- sh -c "
         //                             curl -f http://service-currency:8000/health || exit 1
         //                             curl -f http://service-history:8000/health || exit 1
@@ -338,11 +338,11 @@ pipeline {
         //                 } else {
         //                     // 개발 환경 헬스 체크
         //                     sh '''
-        //                         # 서비스 헬스 체크
+        //                         // 서비스 헬스 체크
         //                         kubectl get pods -n trip-service-dev
         //                         kubectl get services -n trip-service-dev
         //
-        //                         # API 엔드포인트 테스트
+        //                         // API 엔드포인트 테스트
         //                         kubectl run health-check --image=curlimages/curl -i --tty --rm -n trip-service-dev -- sh -c "
         //                             curl -f http://service-currency:8000/health || exit 1
         //                             curl -f http://service-history:8000/health || exit 1
