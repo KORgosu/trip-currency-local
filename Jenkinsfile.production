@@ -111,7 +111,25 @@ pipeline {
                         echo "🐳 Frontend Docker 이미지 빌드 중..."
                         dir('frontend') {
                             script {
-                                def image = docker.build("${DOCKERHUB_USERNAME}/${IMAGE_NAME}-frontend:${PROD_TAG}")
+                                // 네트워크 문제 해결을 위한 재시도 로직
+                                def image
+                                def retryCount = 0
+                                def maxRetries = 3
+                                
+                                while (retryCount < maxRetries) {
+                                    try {
+                                        image = docker.build("${DOCKERHUB_USERNAME}/${IMAGE_NAME}-frontend:${PROD_TAG}")
+                                        break
+                                    } catch (Exception e) {
+                                        retryCount++
+                                        if (retryCount < maxRetries) {
+                                            echo "⚠️ Docker 빌드 실패, ${retryCount}/${maxRetries} 재시도 중..."
+                                            sleep(10)
+                                        } else {
+                                            throw e
+                                        }
+                                    }
+                                }
 
                                 // Docker Hub에 푸시 (Access Token 사용)
                                 docker.withRegistry("https://${DOCKER_REGISTRY}", 'dockerhub-credentials') {

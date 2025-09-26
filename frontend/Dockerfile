@@ -8,13 +8,13 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # package.json과 package-lock.json 복사 (캐시 최적화)
-COPY frontend/package*.json ./
+COPY package*.json ./
 
 # 의존성 설치 (빌드용이므로 devDependencies 포함)
 RUN npm install --legacy-peer-deps --silent
 
 # 소스 코드 복사
-COPY frontend/ .
+COPY . .
 
 # 애플리케이션 빌드
 RUN npm run build
@@ -23,7 +23,7 @@ RUN npm run build
 FROM nginx:alpine AS production
 
 # Nginx 설정 파일 복사
-COPY frontend/nginx.conf /etc/nginx/nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # 빌드된 파일들을 Nginx 서빙 디렉토리로 복사
 COPY --from=builder /app/dist /usr/share/nginx/html
