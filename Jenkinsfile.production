@@ -1,5 +1,5 @@
-# 운영환경용 Jenkins 파이프라인
-# 이 파일은 운영 PC의 Jenkins에서 사용합니다.
+// 운영환경용 Jenkins 파이프라인
+// 이 파일은 운영 PC의 Jenkins에서 사용합니다.
 
 pipeline {
     agent { label 'ec2-worker-ubuntu' }
