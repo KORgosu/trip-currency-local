@@ -8,7 +8,7 @@ pipeline {
         // Docker Registry 설정 (운영환경용)
         DOCKER_REGISTRY = 'docker.io'  // Docker Hub
         DOCKERHUB_USERNAME = "${env.DOCKER_HUB_USERNAME}"  // Jenkins 환경 변수에서 가져옴
-        IMAGE_NAME = 'trip-service'
+        IMAGE_NAME = 'service'
 
         // AWS ECR 설정
         AWS_REGION = 'ap-northeast-2'
