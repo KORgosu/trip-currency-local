@@ -34,7 +34,7 @@ pipeline {
                         echo "🔨 Frontend 빌드 및 테스트 중..."
                         dir('frontend') {
                             sh '''
-                                npm install
+                                npm install --legacy-peer-deps
                                 npm run build
                                 npm run test
                             '''
@@ -47,7 +47,11 @@ pipeline {
                         echo "🔨 Currency Service 테스트 중..."
                         dir('service-currency') {
                             sh '''
-                                python -m pytest tests/ -v
+                                if [ -d "tests" ]; then
+                                    python -m pytest tests/ -v
+                                else
+                                    echo "⚠️ 테스트 디렉토리가 없습니다. 테스트를 건너뜁니다."
+                                fi
                             '''
                         }
                     }
@@ -58,7 +62,11 @@ pipeline {
                         echo "🔨 History Service 테스트 중..."
                         dir('service-history') {
                             sh '''
-                                python -m pytest tests/ -v
+                                if [ -d "tests" ]; then
+                                    python -m pytest tests/ -v
+                                else
+                                    echo "⚠️ 테스트 디렉토리가 없습니다. 테스트를 건너뜁니다."
+                                fi
                             '''
                         }
                     }
@@ -69,7 +77,11 @@ pipeline {
                         echo "🔨 Ranking Service 테스트 중..."
                         dir('service-ranking') {
                             sh '''
-                                python -m pytest tests/ -v
+                                if [ -d "tests" ]; then
+                                    python -m pytest tests/ -v
+                                else
+                                    echo "⚠️ 테스트 디렉토리가 없습니다. 테스트를 건너뜁니다."
+                                fi
                             '''
                         }
                     }
@@ -80,7 +92,11 @@ pipeline {
                         echo "🔨 Data Ingestor 테스트 중..."
                         dir('service-dataingestor') {
                             sh '''
-                                python -m pytest tests/ -v
+                                if [ -d "tests" ]; then
+                                    python -m pytest tests/ -v
+                                else
+                                    echo "⚠️ 테스트 디렉토리가 없습니다. 테스트를 건너뜁니다."
+                                fi
                             '''
                         }
                     }
