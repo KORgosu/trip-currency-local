@@ -254,10 +254,7 @@ const CountryCard = ({ country, onChartClick }) => {
     GQ: { name: '적도기니', flag: '🇬🇶', currency: 'XAF' },
     GA: { name: '가봉', flag: '🇬🇦', currency: 'XAF' },
     DZ: { name: '알제리', flag: '🇩🇿', currency: 'DZD' },
-    LY: { name: '리비아', flag: '🇱🇾', currency: 'LYD' },
-    SD: { name: '수단', flag: '🇸🇩', currency: 'SDG' },
-    SS: { name: '남수단', flag: '🇸🇸', currency: 'SSP' },
-    TN: { name: '튀니지', flag: '🇹🇳', currency: 'TND' }
+    LY: { name: '리비아', flag: '🇱🇾', currency: 'LYD' }
   };
 
   const info = countryInfo[country] || { name: country, flag: '🏳️', currency: 'USD' };

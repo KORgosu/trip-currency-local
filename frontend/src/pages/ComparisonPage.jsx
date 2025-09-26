@@ -164,7 +164,7 @@ const ComparisonPage = () => {
       'MM': 'MMK', 'KH': 'KHR', 'LA': 'LAK', 'BN': 'BND', 'FJ': 'FJD',
       'PG': 'PGK', 'SB': 'SBD', 'VU': 'VUV', 'WS': 'WST', 'TO': 'TOP',
       'KI': 'AUD', 'TV': 'AUD', 'NR': 'AUD', 'PW': 'USD', 'FM': 'USD',
-      'MH': 'USD', 'SB': 'SBD', 'VU': 'VUV', 'WS': 'WST', 'TO': 'TOP',
+      'MH': 'USD',
       
       // 아메리카
       'CA': 'CAD', 'MX': 'MXN', 'BR': 'BRL', 'AR': 'ARS', 'CL': 'CLP',
@@ -192,20 +192,19 @@ const ComparisonPage = () => {
       'UG': 'UGX', 'TZ': 'TZS', 'RW': 'RWF', 'BI': 'BIF', 'MW': 'MWK',
       'ZM': 'ZMW', 'ZW': 'ZWL', 'BW': 'BWP', 'NA': 'NAD', 'SZ': 'SZL',
       'LS': 'LSL', 'MZ': 'MZN', 'MG': 'MGA', 'MU': 'MUR', 'SC': 'SCR',
-      'KM': 'KMF', 'YT': 'EUR', 'RE': 'EUR', 'ZA': 'ZAR', 'LS': 'LSL',
-      'SZ': 'SZL', 'BW': 'BWP', 'NA': 'NAD', 'ZW': 'ZWL', 'AO': 'AOA',
+      'KM': 'KMF', 'YT': 'EUR', 'RE': 'EUR', 'ZA': 'ZAR', 'AO': 'AOA',
       'CD': 'CDF', 'CG': 'XAF', 'CM': 'XAF', 'CF': 'XAF', 'TD': 'XAF',
       'GQ': 'XAF', 'GA': 'XAF', 'ST': 'STN', 'BJ': 'XOF', 'BF': 'XOF',
       'CI': 'XOF', 'GM': 'GMD', 'GN': 'GNF', 'GW': 'XOF', 'LR': 'LRD',
       'ML': 'XOF', 'MR': 'MRU', 'NE': 'XOF', 'SN': 'XOF', 'SL': 'SLE',
-      'TG': 'XOF', 'CV': 'CVE', 'GH': 'GHS', 'NG': 'NGN', 'TG': 'XOF',
+      'TG': 'XOF', 'CV': 'CVE', 'GH': 'GHS', 'NG': 'NGN',
       
       // 기타
       'AF': 'AFN', 'PK': 'PKR', 'BD': 'BDT', 'LK': 'LKR', 'NP': 'NPR',
       'MM': 'MMK', 'KH': 'KHR', 'LA': 'LAK', 'BN': 'BND', 'FJ': 'FJD',
       'PG': 'PGK', 'SB': 'SBD', 'VU': 'VUV', 'WS': 'WST', 'TO': 'TOP',
       'KI': 'AUD', 'TV': 'AUD', 'NR': 'AUD', 'PW': 'USD', 'FM': 'USD',
-      'MH': 'USD', 'SB': 'SBD', 'VU': 'VUV', 'WS': 'WST', 'TO': 'TOP'
+      'MH': 'USD'
     };
     return countryToCurrency[countryCode] || 'USD';
   };
