@@ -323,3 +323,4 @@ trip-service-local/
 - 이벤트: `kubectl get events -n trip-service-dev`
 - 서비스 상태: `kubectl get all -n trip-service-dev`
 
+# Jenkins 빌드 테스트 2025년 09월 26일 금 오후 12:32:44
