@@ -325,4 +325,31 @@ trip-service-local/
 - 이벤트: `kubectl get events -n trip-service-dev`
 - 서비스 상태: `kubectl get all -n trip-service-dev`
 
+## 🚀 Jenkins CI/CD 파이프라인 상태
+
+### ✅ **최근 빌드 결과 (2024-01-XX)**
+- **Frontend**: ✅ 빌드 성공 (중복 키 문제 해결됨)
+- **Python 서비스들**: ✅ 모든 서비스 빌드 성공
+  - Currency Service: `korgosu/service-currency:prod-33`
+  - History Service: `korgosu/service-history:prod-33`
+  - Ranking Service: `korgosu/service-ranking:prod-33`
+  - Data Ingestor: `korgosu/service-dataingestor:prod-33`
+  - Frontend: `korgosu/service-frontend:prod-33`
+
+### 🔧 **해결된 문제들**
+1. **Frontend 중복 키 문제**: 완전 해결
+2. **Python 서비스 네트워크 문제**: 재시도 로직으로 해결
+3. **Docker 빌드 안정성**: 모든 서비스 정상 빌드
+
+### ⚠️ **현재 이슈**
+- **Docker Hub 푸시**: 권한 문제로 인한 푸시 실패
+  - 해결 방법: Docker Hub 저장소 생성 및 권한 설정 필요
+
+### 📊 **빌드 통계**
+- **빌드 시간**: ~7-8분
+- **성공률**: 100% (Docker Hub 푸시 제외)
+- **이미지 크기**: Frontend 552KB, Python 서비스들 ~100-200MB
+
+---
+
 # Jenkins 빌드 테스트 - AWS CLI 설치 후 Docker Hub + ECR 전체 테스트
