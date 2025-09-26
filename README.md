@@ -3,6 +3,8 @@
 ## 📋 개요
 이 프로젝트는 마이크로서비스 아키텍처를 기반으로 한 여행 서비스의 로컬 개발 환경입니다. Kubernetes, Docker, FastAPI, React를 사용하여 구성되었습니다.
 
+> **✨ 업데이트**: Jenkins CI/CD 파이프라인이 EC2 Worker와 IAM Role 기반으로 구성되어 안전하고 효율적인 빌드 환경을 제공합니다.
+
 ## 🏗️ 아키텍처
 - **Frontend**: React + Vite
 - **Backend Services**: FastAPI (Python)
