@@ -6,7 +6,7 @@ pipeline {
     
     environment {
         // Docker Registry 설정 (운영환경용)
-        DOCKER_REGISTRY = 'https://index.docker.io/v1/'  // Docker Hub 정확한 URL
+        DOCKER_REGISTRY = ''  // Docker Hub (빈 문자열로 기본 레지스트리 사용)
         DOCKERHUB_USERNAME = "${env.DOCKER_HUB_USERNAME}"  // Jenkins 환경 변수에서 가져옴
         IMAGE_NAME = 'service'
 
