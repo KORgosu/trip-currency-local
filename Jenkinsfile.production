@@ -367,20 +367,20 @@ pipeline {
         }
         
         success {
-            echo "✅ 파이프라인 성공!"
+            echo "✅ 파이프라인 성공! Docker Hub와 ECR 이미지 푸시 완료"
             slackSend(
                 channel: '#production',
                 color: 'good',
-                message: "✅ ${env.JOB_NAME} - ${env.BUILD_NUMBER} 운영환경 배포 성공!\n이미지 태그: ${PROD_TAG}"
+                message: "✅ ${env.JOB_NAME} - ${env.BUILD_NUMBER} 빌드 및 이미지 푸시 성공!\n이미지 태그: ${PROD_TAG}"
             )
         }
         
         failure {
-            echo "❌ 파이프라인 실패!"
+            echo "❌ 파이프라인 실패! 빌드 로그를 확인하세요."
             slackSend(
                 channel: '#production',
                 color: 'danger',
-                message: "❌ ${env.JOB_NAME} - ${env.BUILD_NUMBER} 운영환경 배포 실패!\n로그 확인: ${env.BUILD_URL}"
+                message: "❌ ${env.JOB_NAME} - ${env.BUILD_NUMBER} 빌드 또는 이미지 푸시 실패!\n로그 확인: ${env.BUILD_URL}"
             )
         }
     }
