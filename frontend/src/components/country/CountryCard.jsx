@@ -229,32 +229,7 @@ const CountryCard = ({ country, onChartClick }) => {
     LY: { name: '리비아', flag: '🇱🇾', currency: 'LYD' },
     SD: { name: '수단', flag: '🇸🇩', currency: 'SDG' },
     SS: { name: '남수단', flag: '🇸🇸', currency: 'SSP' },
-    TN: { name: '튀니지', flag: '🇹🇳', currency: 'TND' },
-    LR: { name: '라이베리아', flag: '🇱🇷', currency: 'LRD' },
-    SL: { name: '시에라리온', flag: '🇸🇱', currency: 'SLE' },
-    GM: { name: '감비아', flag: '🇬🇲', currency: 'GMD' },
-    GW: { name: '기니비사우', flag: '🇬🇼', currency: 'XOF' },
-    GN: { name: '기니', flag: '🇬🇳', currency: 'GNF' },
-    ML: { name: '말리', flag: '🇲🇱', currency: 'XOF' },
-    MR: { name: '모리타니', flag: '🇲🇷', currency: 'MRU' },
-    NE: { name: '니제르', flag: '🇳🇪', currency: 'XOF' },
-    SN: { name: '세네갈', flag: '🇸🇳', currency: 'XOF' },
-    TG: { name: '토고', flag: '🇹🇬', currency: 'XOF' },
-    BJ: { name: '베냉', flag: '🇧🇯', currency: 'XOF' },
-    BF: { name: '부르키나파소', flag: '🇧🇫', currency: 'XOF' },
-    CI: { name: '코트디부아르', flag: '🇨🇮', currency: 'XOF' },
-    CV: { name: '카보베르데', flag: '🇨🇻', currency: 'CVE' },
-    ST: { name: '상투메프린시페', flag: '🇸🇹', currency: 'STN' },
-    AO: { name: '앙골라', flag: '🇦🇴', currency: 'AOA' },
-    CD: { name: '콩고민주공화국', flag: '🇨🇩', currency: 'CDF' },
-    CG: { name: '콩고공화국', flag: '🇨🇬', currency: 'XAF' },
-    CM: { name: '카메룬', flag: '🇨🇲', currency: 'XAF' },
-    CF: { name: '중앙아프리카공화국', flag: '🇨🇫', currency: 'XAF' },
-    TD: { name: '차드', flag: '🇹🇩', currency: 'XAF' },
-    GQ: { name: '적도기니', flag: '🇬🇶', currency: 'XAF' },
-    GA: { name: '가봉', flag: '🇬🇦', currency: 'XAF' },
-    DZ: { name: '알제리', flag: '🇩🇿', currency: 'DZD' },
-    LY: { name: '리비아', flag: '🇱🇾', currency: 'LYD' }
+    TN: { name: '튀니지', flag: '🇹🇳', currency: 'TND' }
   };
 
   const info = countryInfo[country] || { name: country, flag: '🏳️', currency: 'USD' };
