@@ -1,5 +1,5 @@
 # Trip Currency Shared Package v1.0.0 (로컬 설치)
--e ../package-shared
+# -e ../package-shared  # Docker 빌드 중 비활성화
 
 # FastAPI and web framework
 fastapi==0.104.1
