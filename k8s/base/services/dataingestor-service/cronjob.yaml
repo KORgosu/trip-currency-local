@@ -30,6 +30,10 @@ spec:
           labels:
             app: service-dataingestor
             job-type: data-collection
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "8000"
+            prometheus.io/path: "/metrics"
         spec:
           restartPolicy: OnFailure
 

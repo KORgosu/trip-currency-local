@@ -25,9 +25,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 import uvicorn
 from typing import List, Optional
+
+# Prometheus monitoring
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+import time
 
 from shared.config import init_config, get_config
 from shared.database import init_database, get_db_manager
@@ -52,6 +56,37 @@ logger = logging.getLogger(__name__)
 # 전역 변수
 currency_provider: Optional[CurrencyProvider] = None
 kafka_consumer = None
+
+# Prometheus 메트릭 정의
+http_requests_total = Counter(
+    'http_requests_total',
+    'Total number of HTTP requests',
+    ['method', 'endpoint', 'status']
+)
+
+http_request_duration_seconds = Histogram(
+    'http_request_duration_seconds',
+    'Time spent processing HTTP requests',
+    ['method', 'endpoint']
+)
+
+currency_requests_total = Counter(
+    'currency_requests_total',
+    'Total number of currency API requests',
+    ['currency_code', 'endpoint']
+)
+
+active_connections = Gauge(
+    'active_database_connections',
+    'Number of active database connections',
+    ['database_type']
+)
+
+cache_operations_total = Counter(
+    'cache_operations_total',
+    'Total cache operations',
+    ['operation', 'cache_type']
+)
 
 
 @asynccontextmanager
@@ -128,28 +163,46 @@ def get_currency_provider() -> CurrencyProvider:
 # 미들웨어
 @app.middleware("http")
 async def logging_middleware(request, call_next):
-    """로깅 미들웨어"""
+    """로깅 및 메트릭 미들웨어"""
     # 상관관계 ID 설정
     correlation_id = request.headers.get("X-Correlation-ID") or SecurityUtils.generate_correlation_id()
     set_correlation_id(correlation_id)
-    
+
     # 요청 ID 설정 (Lambda에서는 AWS Request ID 사용)
     request_id = request.headers.get("X-Request-ID") or SecurityUtils.generate_uuid()
     set_request_id(request_id)
-    
-    logger.info(f"Request started: {request.method} {request.url}")
-    
+
+    # 메트릭을 위한 시작 시간 기록
+    start_time = time.time()
+    endpoint = request.url.path
+    method = request.method
+
+    logger.info(f"Request started: {method} {request.url}")
+
     try:
         response = await call_next(request)
-        
-        logger.info(f"Request completed: {request.method} {request.url} - {response.status_code}")
-        
+
+        # HTTP 요청 메트릭 업데이트
+        status = str(response.status_code)
+        http_requests_total.labels(method=method, endpoint=endpoint, status=status).inc()
+
+        # 응답 시간 메트릭 업데이트
+        duration = time.time() - start_time
+        http_request_duration_seconds.labels(method=method, endpoint=endpoint).observe(duration)
+
+        logger.info(f"Request completed: {method} {request.url} - {response.status_code}")
+
         # 응답 헤더에 상관관계 ID 추가
         response.headers["X-Correlation-ID"] = correlation_id
         return response
-        
+
     except Exception as e:
-        logger.error(f"Request failed: {request.method} {request.url} - {e}")
+        # 에러 상태도 메트릭에 기록
+        http_requests_total.labels(method=method, endpoint=endpoint, status="500").inc()
+        duration = time.time() - start_time
+        http_request_duration_seconds.labels(method=method, endpoint=endpoint).observe(duration)
+
+        logger.error(f"Request failed: {method} {request.url} - {e}")
         raise
 
 
@@ -190,6 +243,12 @@ async def general_exception_handler(request, exc: Exception):
         }
     )
 
+
+# Prometheus 메트릭 엔드포인트
+@app.get("/metrics")
+async def get_metrics():
+    """Prometheus 메트릭 엔드포인트"""
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 # API 엔드포인트들
 @app.get("/health")
@@ -286,7 +345,11 @@ async def get_latest_rates(
         
         # 환율 데이터 조회
         rates_data = await provider.get_latest_rates(currency_codes, base.upper())
-        
+
+        # 비즈니스 메트릭 업데이트
+        for code in currency_codes:
+            currency_requests_total.labels(currency_code=code, endpoint="/latest").inc()
+
         # 프론트엔드 호환성을 위해 기존 형태로 응답
         return SuccessResponse(data=rates_data)
         

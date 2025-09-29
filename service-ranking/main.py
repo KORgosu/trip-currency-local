@@ -27,9 +27,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from fastapi import FastAPI, HTTPException, Query, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 import uvicorn
 from typing import List, Optional, Dict, Any
+
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
 from shared.config import init_config, get_config
 from shared.database import init_database, get_db_manager
@@ -55,6 +57,15 @@ from datetime import datetime, timedelta
 
 # 로거 초기화
 logger = logging.getLogger(__name__)
+
+# Prometheus 메트릭 정의
+http_requests_total = Counter('http_requests_total', 'Total number of HTTP requests', ['method', 'endpoint', 'status'])
+http_request_duration_seconds = Histogram('http_request_duration_seconds', 'Time spent processing HTTP requests', ['method', 'endpoint'])
+ranking_requests_total = Counter('ranking_requests_total', 'Total number of ranking API requests', ['country_code', 'endpoint'])
+country_clicks_total = Counter('country_clicks_total', 'Total number of country clicks recorded', ['country_code'])
+daily_reset_operations_total = Counter('daily_reset_operations_total', 'Total number of daily reset operations')
+scheduler_operations_total = Counter('scheduler_operations_total', 'Total number of scheduler operations', ['operation', 'status'])
+mongodb_connections_active = Gauge('mongodb_connections_active', 'Number of active MongoDB connections')
 
 # 전역 변수
 selection_recorder: Optional[SelectionRecorder] = None
@@ -187,27 +198,44 @@ async def check_rate_limit(request: Request):
 # 미들웨어
 @app.middleware("http")
 async def logging_middleware(request, call_next):
-    """로깅 미들웨어"""
+    """로깅 및 메트릭 미들웨어"""
     # 상관관계 ID 설정
     correlation_id = request.headers.get("X-Correlation-ID") or SecurityUtils.generate_correlation_id()
     set_correlation_id(correlation_id)
-    
+
     # 요청 ID 설정
     request_id = request.headers.get("X-Request-ID") or SecurityUtils.generate_uuid()
     set_request_id(request_id)
-    
+
     logger.info(f"Request started: {request.method} {request.url}")
-    
+
+    # 메트릭 수집 시작
+    start_time = time.time()
+    endpoint = str(request.url.path)
+    method = request.method
+
     try:
         response = await call_next(request)
-        
+
+        # 응답 시간 측정 및 메트릭 업데이트
+        duration = time.time() - start_time
+        status_code = str(response.status_code)
+
+        http_requests_total.labels(method=method, endpoint=endpoint, status=status_code).inc()
+        http_request_duration_seconds.labels(method=method, endpoint=endpoint).observe(duration)
+
         logger.info(f"Request completed: {request.method} {request.url} - {response.status_code}")
-        
+
         # 응답 헤더에 상관관계 ID 추가
         response.headers["X-Correlation-ID"] = correlation_id
         return response
-        
+
     except Exception as e:
+        # 오류 메트릭 업데이트
+        duration = time.time() - start_time
+        http_requests_total.labels(method=method, endpoint=endpoint, status="500").inc()
+        http_request_duration_seconds.labels(method=method, endpoint=endpoint).observe(duration)
+
         logger.error(f"Request failed: {request.method} {request.url} - {e}")
         raise
 
@@ -251,6 +279,12 @@ async def general_exception_handler(request, exc: Exception):
 
 
 # API 엔드포인트들
+@app.get("/metrics")
+async def get_metrics():
+    """Prometheus 메트릭 엔드포인트"""
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
 @app.get("/health")
 async def health_check():
     """헬스 체크 - 데이터베이스 연결 상태 포함"""
@@ -337,7 +371,11 @@ async def record_country_click(
             country_code=country_code,
             country_name=country_name
         )
-        
+
+        # 메트릭 업데이트
+        country_clicks_total.labels(country_code=country_code).inc()
+        ranking_requests_total.labels(country_code=country_code, endpoint="click").inc()
+
         logger.info(f"Country click recorded: {country} -> {country_code} (clicks: {click_data['daily_clicks']}, rank: {click_data['current_rank']})")
         
         return SuccessResponse(
@@ -484,7 +522,10 @@ async def reset_daily_clicks(
     try:
         # MongoDB에서 일일 클릭수 초기화
         reset_count = await mongodb_service.reset_daily_clicks(date=date)
-        
+
+        # 메트릭 업데이트
+        daily_reset_operations_total.inc()
+
         return SuccessResponse(
             data={
                 "message": "Daily click counts have been reset",
