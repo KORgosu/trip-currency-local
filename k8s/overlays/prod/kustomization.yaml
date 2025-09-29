@@ -14,50 +14,50 @@ patches:
   patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/image
-      value: korgosu/service-frontend:prod-latest
+      value: korgosu/service-frontend:latest
     - op: replace
       path: /spec/template/spec/containers/0/imagePullPolicy
-      value: IfNotPresent
+      value: Always
 - target:
     kind: Deployment
     name: service-currency
   patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/image
-      value: korgosu/service-currency:prod-latest
+      value: korgosu/service-currency:latest
     - op: replace
       path: /spec/template/spec/containers/0/imagePullPolicy
-      value: IfNotPresent
+      value: Always
 - target:
     kind: Deployment
     name: service-history
   patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/image
-      value: korgosu/service-history:prod-latest
+      value: korgosu/service-history:latest
     - op: replace
       path: /spec/template/spec/containers/0/imagePullPolicy
-      value: IfNotPresent
+      value: Always
 - target:
     kind: Deployment
     name: service-ranking
   patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/image
-      value: korgosu/service-ranking:prod-latest
+      value: korgosu/service-ranking:latest
     - op: replace
       path: /spec/template/spec/containers/0/imagePullPolicy
-      value: IfNotPresent
+      value: Always
 - target:
     kind: CronJob
     name: service-dataingestor-cronjob
   patch: |-
     - op: replace
       path: /spec/jobTemplate/spec/template/spec/containers/0/image
-      value: korgosu/service-dataingestor:prod-latest
+      value: korgosu/service-dataingestor:latest
     - op: replace
       path: /spec/jobTemplate/spec/template/spec/containers/0/imagePullPolicy
-      value: IfNotPresent
+      value: Always
 # 프로덕션 리소스 제한 및 레플리카 설정
 - target:
     kind: Deployment
