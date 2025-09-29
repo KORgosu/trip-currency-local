@@ -58,14 +58,41 @@ from datetime import datetime, timedelta
 # 로거 초기화
 logger = logging.getLogger(__name__)
 
-# Prometheus 메트릭 정의
-http_requests_total = Counter('http_requests_total', 'Total number of HTTP requests', ['method', 'endpoint', 'status'])
-http_request_duration_seconds = Histogram('http_request_duration_seconds', 'Time spent processing HTTP requests', ['method', 'endpoint'])
-ranking_requests_total = Counter('ranking_requests_total', 'Total number of ranking API requests', ['country_code', 'endpoint'])
-country_clicks_total = Counter('country_clicks_total', 'Total number of country clicks recorded', ['country_code'])
-daily_reset_operations_total = Counter('daily_reset_operations_total', 'Total number of daily reset operations')
-scheduler_operations_total = Counter('scheduler_operations_total', 'Total number of scheduler operations', ['operation', 'status'])
-mongodb_connections_active = Gauge('mongodb_connections_active', 'Number of active MongoDB connections')
+# Prometheus 메트릭 정의 (중복 방지)
+from prometheus_client import REGISTRY
+
+def get_or_create_counter(name, description, labels=None):
+    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
+    for collector in list(REGISTRY._collector_to_names.keys()):
+        if hasattr(collector, '_name') and collector._name == name:
+            return collector
+    if labels:
+        return Counter(name, description, labels)
+    else:
+        return Counter(name, description)
+
+def get_or_create_histogram(name, description, labels):
+    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
+    for collector in list(REGISTRY._collector_to_names.keys()):
+        if hasattr(collector, '_name') and collector._name == name:
+            return collector
+    return Histogram(name, description, labels)
+
+def get_or_create_gauge(name, description):
+    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
+    for collector in list(REGISTRY._collector_to_names.keys()):
+        if hasattr(collector, '_name') and collector._name == name:
+            return collector
+    return Gauge(name, description)
+
+# 안전한 메트릭 생성
+http_requests_total = get_or_create_counter('http_requests_total', 'Total number of HTTP requests', ['method', 'endpoint', 'status'])
+http_request_duration_seconds = get_or_create_histogram('http_request_duration_seconds', 'Time spent processing HTTP requests', ['method', 'endpoint'])
+ranking_requests_total = get_or_create_counter('ranking_requests_total', 'Total number of ranking API requests', ['country_code', 'endpoint'])
+country_clicks_total = get_or_create_counter('country_clicks_total', 'Total number of country clicks recorded', ['country_code'])
+daily_reset_operations_total = get_or_create_counter('daily_reset_operations_total', 'Total number of daily reset operations')
+scheduler_operations_total = get_or_create_counter('scheduler_operations_total', 'Total number of scheduler operations', ['operation', 'status'])
+mongodb_connections_active = get_or_create_gauge('mongodb_connections_active', 'Number of active MongoDB connections')
 
 # 전역 변수
 selection_recorder: Optional[SelectionRecorder] = None

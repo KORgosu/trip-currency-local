@@ -57,32 +57,59 @@ logger = logging.getLogger(__name__)
 currency_provider: Optional[CurrencyProvider] = None
 kafka_consumer = None
 
-# Prometheus 메트릭 정의
-http_requests_total = Counter(
+# Prometheus 메트릭 정의 (중복 방지)
+from prometheus_client import REGISTRY
+
+def get_or_create_counter(name, description, labels):
+    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
+    for collector in list(REGISTRY._collector_to_names.keys()):
+        if hasattr(collector, '_name') and collector._name == name:
+            return collector
+    return Counter(name, description, labels)
+
+def get_or_create_histogram(name, description, labels):
+    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
+    for collector in list(REGISTRY._collector_to_names.keys()):
+        if hasattr(collector, '_name') and collector._name == name:
+            return collector
+    return Histogram(name, description, labels)
+
+def get_or_create_gauge(name, description, labels=None):
+    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
+    for collector in list(REGISTRY._collector_to_names.keys()):
+        if hasattr(collector, '_name') and collector._name == name:
+            return collector
+    if labels:
+        return Gauge(name, description, labels)
+    else:
+        return Gauge(name, description)
+
+# 안전한 메트릭 생성
+http_requests_total = get_or_create_counter(
     'http_requests_total',
     'Total number of HTTP requests',
     ['method', 'endpoint', 'status']
 )
 
-http_request_duration_seconds = Histogram(
+http_request_duration_seconds = get_or_create_histogram(
     'http_request_duration_seconds',
     'Time spent processing HTTP requests',
     ['method', 'endpoint']
 )
 
-currency_requests_total = Counter(
+currency_requests_total = get_or_create_counter(
     'currency_requests_total',
     'Total number of currency API requests',
     ['currency_code', 'endpoint']
 )
 
-active_connections = Gauge(
+active_connections = get_or_create_gauge(
     'active_database_connections',
     'Number of active database connections',
     ['database_type']
 )
 
-cache_operations_total = Counter(
+cache_operations_total = get_or_create_counter(
     'cache_operations_total',
     'Total cache operations',
     ['operation', 'cache_type']
