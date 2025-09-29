@@ -20,9 +20,9 @@ RUN for i in 1 2 3; do \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 공유 패키지 복사 및 설치 (Docker 빌드 중 비활성화)
-# COPY package-shared /app/package-shared
-# RUN pip install -e /app/package-shared
+# 공유 패키지 복사 및 설치
+COPY ../package-shared /app/package-shared
+RUN pip install -e /app/package-shared
 
 # 애플리케이션 코드 복사
 COPY . /app
