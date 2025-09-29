@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
       - name: service-ranking
-        image: trip-service/service-ranking:latest
-        imagePullPolicy: Never
+        image: korgosu/service-ranking:latest
+        imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: trip-service-config

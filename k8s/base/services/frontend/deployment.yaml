@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
       - name: service-frontend
-        image: trip-service/service-frontend:latest
-        imagePullPolicy: Never
+        image: korgosu/service-frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         env:

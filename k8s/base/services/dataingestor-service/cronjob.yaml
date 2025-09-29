@@ -39,8 +39,8 @@ spec:
 
           containers:
           - name: service-dataingestor
-            image: trip-service/service-dataingestor:latest
-            imagePullPolicy: Never
+            image: korgosu/service-dataingestor:latest
+            imagePullPolicy: Always
 
             # single 모드로 실행 (한 번만 실행하고 종료)
             command: ["python", "main.py"]

@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
       - name: service-currency
-        image: trip-service/service-currency:latest
-        imagePullPolicy: Never
+        image: korgosu/service-currency:latest
+        imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: trip-service-config

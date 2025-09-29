@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
       - name: service-history
-        image: trip-service/service-history:latest
-        imagePullPolicy: Never
+        image: korgosu/service-history:latest
+        imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: trip-service-config
