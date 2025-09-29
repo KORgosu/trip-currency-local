@@ -52,38 +52,20 @@ from shared.messaging import MessageConsumer
 # 로거 초기화
 logger = logging.getLogger(__name__)
 
-# Prometheus 메트릭 정의 (중복 방지)
-from prometheus_client import REGISTRY
+# Prometheus 메트릭 정의 (중복 방지를 위한 새 레지스트리 사용)
+from prometheus_client import CollectorRegistry, Counter, Histogram, Gauge, generate_latest
 
-def get_or_create_counter(name, description, labels):
-    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
-    for collector in list(REGISTRY._collector_to_names.keys()):
-        if hasattr(collector, '_name') and collector._name == name:
-            return collector
-    return Counter(name, description, labels)
+# 새로운 레지스트리 생성 (기본 레지스트리와 분리)
+history_registry = CollectorRegistry()
 
-def get_or_create_histogram(name, description, labels):
-    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
-    for collector in list(REGISTRY._collector_to_names.keys()):
-        if hasattr(collector, '_name') and collector._name == name:
-            return collector
-    return Histogram(name, description, labels)
-
-def get_or_create_gauge(name, description):
-    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
-    for collector in list(REGISTRY._collector_to_names.keys()):
-        if hasattr(collector, '_name') and collector._name == name:
-            return collector
-    return Gauge(name, description)
-
-# 안전한 메트릭 생성
-http_requests_total = get_or_create_counter('http_requests_total', 'Total number of HTTP requests', ['method', 'endpoint', 'status'])
-http_request_duration_seconds = get_or_create_histogram('http_request_duration_seconds', 'Time spent processing HTTP requests', ['method', 'endpoint'])
-history_requests_total = get_or_create_counter('history_requests_total', 'Total number of history API requests', ['currency_code', 'endpoint'])
-exchange_rate_queries_total = get_or_create_counter('exchange_rate_queries_total', 'Total number of exchange rate queries', ['target', 'base', 'period'])
-analysis_operations_total = get_or_create_counter('analysis_operations_total', 'Total number of analysis operations', ['operation', 'currency'])
-kafka_messages_processed_total = get_or_create_counter('kafka_messages_processed_total', 'Total number of Kafka messages processed', ['topic', 'status'])
-mysql_connections_active = get_or_create_gauge('mysql_connections_active', 'Number of active MySQL connections')
+# 서비스별 메트릭 생성 (독립 레지스트리 사용)
+http_requests_total = Counter('history_http_requests_total', 'Total number of HTTP requests', ['method', 'endpoint', 'status'], registry=history_registry)
+http_request_duration_seconds = Histogram('history_http_request_duration_seconds', 'Time spent processing HTTP requests', ['method', 'endpoint'], registry=history_registry)
+history_requests_total = Counter('history_requests_total', 'Total number of history API requests', ['currency_code', 'endpoint'], registry=history_registry)
+exchange_rate_queries_total = Counter('history_exchange_rate_queries_total', 'Total number of exchange rate queries', ['target', 'base', 'period'], registry=history_registry)
+analysis_operations_total = Counter('history_analysis_operations_total', 'Total number of analysis operations', ['operation', 'currency'], registry=history_registry)
+kafka_messages_processed_total = Counter('history_kafka_messages_processed_total', 'Total number of Kafka messages processed', ['topic', 'status'], registry=history_registry)
+mysql_connections_active = Gauge('history_mysql_connections_active', 'Number of active MySQL connections', registry=history_registry)
 
 # 전역 변수
 history_provider: Optional[HistoryProvider] = None
@@ -258,7 +240,7 @@ async def general_exception_handler(request, exc: Exception):
 @app.get("/metrics")
 async def get_metrics():
     """Prometheus 메트릭 엔드포인트"""
-    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+    return Response(generate_latest(history_registry), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/health")

@@ -57,62 +57,46 @@ logger = logging.getLogger(__name__)
 currency_provider: Optional[CurrencyProvider] = None
 kafka_consumer = None
 
-# Prometheus 메트릭 정의 (중복 방지)
-from prometheus_client import REGISTRY
+# Prometheus 메트릭 정의 (중복 방지를 위한 새 레지스트리 사용)
+from prometheus_client import CollectorRegistry, Counter, Histogram, Gauge, generate_latest
 
-def get_or_create_counter(name, description, labels):
-    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
-    for collector in list(REGISTRY._collector_to_names.keys()):
-        if hasattr(collector, '_name') and collector._name == name:
-            return collector
-    return Counter(name, description, labels)
+# 새로운 레지스트리 생성 (기본 레지스트리와 분리)
+currency_registry = CollectorRegistry()
 
-def get_or_create_histogram(name, description, labels):
-    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
-    for collector in list(REGISTRY._collector_to_names.keys()):
-        if hasattr(collector, '_name') and collector._name == name:
-            return collector
-    return Histogram(name, description, labels)
-
-def get_or_create_gauge(name, description, labels=None):
-    """기존 메트릭이 있으면 반환하고, 없으면 새로 생성"""
-    for collector in list(REGISTRY._collector_to_names.keys()):
-        if hasattr(collector, '_name') and collector._name == name:
-            return collector
-    if labels:
-        return Gauge(name, description, labels)
-    else:
-        return Gauge(name, description)
-
-# 안전한 메트릭 생성
-http_requests_total = get_or_create_counter(
-    'http_requests_total',
+# 서비스별 메트릭 생성 (독립 레지스트리 사용)
+http_requests_total = Counter(
+    'currency_http_requests_total',
     'Total number of HTTP requests',
-    ['method', 'endpoint', 'status']
+    ['method', 'endpoint', 'status'],
+    registry=currency_registry
 )
 
-http_request_duration_seconds = get_or_create_histogram(
-    'http_request_duration_seconds',
+http_request_duration_seconds = Histogram(
+    'currency_http_request_duration_seconds',
     'Time spent processing HTTP requests',
-    ['method', 'endpoint']
+    ['method', 'endpoint'],
+    registry=currency_registry
 )
 
-currency_requests_total = get_or_create_counter(
+currency_requests_total = Counter(
     'currency_requests_total',
     'Total number of currency API requests',
-    ['currency_code', 'endpoint']
+    ['currency_code', 'endpoint'],
+    registry=currency_registry
 )
 
-active_connections = get_or_create_gauge(
-    'active_database_connections',
+active_connections = Gauge(
+    'currency_active_database_connections',
     'Number of active database connections',
-    ['database_type']
+    ['database_type'],
+    registry=currency_registry
 )
 
-cache_operations_total = get_or_create_counter(
-    'cache_operations_total',
+cache_operations_total = Counter(
+    'currency_cache_operations_total',
     'Total cache operations',
-    ['operation', 'cache_type']
+    ['operation', 'cache_type'],
+    registry=currency_registry
 )
 
 
@@ -275,7 +259,7 @@ async def general_exception_handler(request, exc: Exception):
 @app.get("/metrics")
 async def get_metrics():
     """Prometheus 메트릭 엔드포인트"""
-    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+    return Response(generate_latest(currency_registry), media_type=CONTENT_TYPE_LATEST)
 
 # API 엔드포인트들
 @app.get("/health")
