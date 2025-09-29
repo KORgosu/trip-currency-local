@@ -23,7 +23,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 공유 패키지 복사 및 설치
-COPY ../package-shared /app/package-shared
+COPY package-shared /app/package-shared
 RUN pip install -e /app/package-shared
 
 # 애플리케이션 코드 복사

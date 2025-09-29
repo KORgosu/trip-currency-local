@@ -1,0 +1,2 @@
+[console_scripts]
+trip-currency-shared = shared.cli:main
