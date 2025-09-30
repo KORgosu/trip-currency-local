@@ -272,13 +272,15 @@ pipeline {
                         sed -i 's|korgosu/service-dataingestor:.*|korgosu/service-dataingestor:${PROD_TAG}|g' kustomization.yaml
                     """
 
-                    // 변경사항 커밋 및 푸시
-                    sh """
-                        cd gitops-repo
-                        git config user.name "Jenkins CI"
-                        git config user.email "jenkins@yourdomain.com"
-                        git add .
-                        git commit -m "chore: Update image tags to ${PROD_TAG} for production deployment
+                    // 변경사항 커밋 및 푸시 (GitHub Token 사용)
+                    withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
+                        sh """
+                            cd gitops-repo
+                            git config user.name "Jenkins CI"
+                            git config user.email "jenkins@yourdomain.com"
+                            git remote set-url origin https://\${GIT_USERNAME}:\${GIT_TOKEN}@github.com/KORgosu/trip-currency-local-gitops.git
+                            git add .
+                            git commit -m "chore: Update image tags to ${PROD_TAG} for production deployment
 
 🚀 Automated deployment via Jenkins CI/CD
 - Frontend: korgosu/service-frontend:${PROD_TAG}
@@ -288,8 +290,9 @@ pipeline {
 - DataIngestor: korgosu/service-dataingestor:${PROD_TAG}
 
 ArgoCD will automatically sync these changes to production cluster."
-                        git push origin main
-                    """
+                            git push origin main
+                        """
+                    }
 
                     echo "✅ GitOps 저장소 업데이트 완료!"
                     echo "🔄 ArgoCD가 자동으로 변경사항을 감지하여 운영 클러스터에 배포합니다."
