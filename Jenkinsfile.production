@@ -250,87 +250,53 @@ pipeline {
             }
         }
         
-        // Deploy to Production Kubernetes - 주석 처리됨
-        // stage('Deploy to Production Kubernetes') {
-        //     steps {
-        //         echo "🚀 운영 Kubernetes 클러스터 배포 중..."
-        //         script {
-        //             // Kubernetes 클러스터 존재 여부 확인
-        //             def k8sAvailable = false
-        //             try {
-        //                 sh '''
-        //                     // Kubernetes 클러스터 연결 확인
-        //                     kubectl cluster-info
-        //                     kubectl get nodes
-        //                 '''
-        //                 k8sAvailable = true
-        //                 echo "✅ Kubernetes 클러스터가 정상적으로 연결되었습니다."
-        //             } catch (Exception e) {
-        //                 echo "⚠️ Kubernetes 클러스터에 연결할 수 없습니다."
-        //                 echo "📦 Docker Hub와 ECR에 이미지만 저장하고 배포는 건너뜁니다."
-        //                 k8sAvailable = false
-        //             }
-        //
-        //             if (k8sAvailable) {
-        //                 if (env.BRANCH_NAME == 'main') {
-        //                     // 프로덕션 환경 배포
-        //                     sh '''
-        //                         // 운영 Kubernetes 클러스터 확인
-        //                         kubectl get nodes
-        //                         kubectl get pods -n trip-service-prod
-        //
-        //                         // 이미지 태그 업데이트
-        //                         kubectl set image deployment/service-frontend service-frontend=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-frontend:${PROD_TAG} -n trip-service-prod
-        //                         kubectl set image deployment/service-currency service-currency=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-currency:${PROD_TAG} -n trip-service-prod
-        //                         kubectl set image deployment/service-history service-history=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-history:${PROD_TAG} -n trip-service-prod
-        //                         kubectl set image deployment/service-ranking service-ranking=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-ranking:${PROD_TAG} -n trip-service-prod
-        //                         kubectl set image deployment/service-dataingestor service-dataingestor=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-dataingestor:${PROD_TAG} -n trip-service-prod
-        //
-        //                         // 배포 상태 확인
-        //                         kubectl rollout status deployment/service-frontend -n trip-service-prod
-        //                         kubectl rollout status deployment/service-currency -n trip-service-prod
-        //                         kubectl rollout status deployment/service-history -n trip-service-prod
-        //                         kubectl rollout status deployment/service-ranking -n trip-service-prod
-        //                         kubectl rollout status deployment/service-dataingestor -n trip-service-prod
-        //                     '''
-        //                 } else {
-        //                     // 개발 환경 배포
-        //                     sh '''
-        //                         // 개발 Kubernetes 클러스터 확인
-        //                         kubectl get nodes
-        //                         kubectl get pods -n trip-service-dev
-        //
-        //                         // 이미지 태그 업데이트
-        //                         kubectl set image deployment/service-frontend service-frontend=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-frontend:${DEV_TAG} -n trip-service-dev
-        //                         kubectl set image deployment/service-currency service-currency=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-currency:${DEV_TAG} -n trip-service-dev
-        //                         kubectl set image deployment/service-history service-history=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-history:${DEV_TAG} -n trip-service-dev
-        //                         kubectl set image deployment/service-ranking service-ranking=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-ranking:${DEV_TAG} -n trip-service-dev
-        //                         kubectl set image deployment/service-dataingestor service-dataingestor=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-dataingestor:${DEV_TAG} -n trip-service-dev
-        //
-        //                         // 배포 상태 확인
-        //                         kubectl rollout status deployment/service-frontend -n trip-service-dev
-        //                         kubectl rollout status deployment/service-currency -n trip-service-dev
-        //                         kubectl rollout status deployment/service-history -n trip-service-dev
-        //                         kubectl rollout status deployment/service-ranking -n trip-service-dev
-        //                         kubectl rollout status deployment/service-dataingestor -n trip-service-dev
-        //                     '''
-        //                 }
-        //             } else {
-        //                 echo "📦 Kubernetes 클러스터가 존재하지 않습니다."
-        //                 echo "✅ Docker Hub와 ECR에 이미지만 성공적으로 저장되었습니다."
-        //                 echo "🔗 저장된 이미지들:"
-        //                 echo "   - Docker Hub: ${DOCKERHUB_USERNAME}/${IMAGE_NAME}-*:${PROD_TAG}"
-        //                 echo "   - AWS ECR: ${ECR_REGISTRY}/${IMAGE_NAME}-*:${PROD_TAG}"
-        //                 echo "💡 Kubernetes 클러스터가 준비되면 다음 명령어로 배포할 수 있습니다:"
-        //                 echo "   kubectl set image deployment/service-frontend service-frontend=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-frontend:${PROD_TAG} -n trip-service-prod"
-        //                 echo "   kubectl set image deployment/service-currency service-currency=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-currency:${PROD_TAG} -n trip-service-prod"
-        //                 echo "   kubectl set image deployment/service-history service-history=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-history:${PROD_TAG} -n trip-service-prod"
-        //                 echo "   kubectl set image deployment/service-ranking service-ranking=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-ranking:${PROD_TAG} -n trip-service-prod"
-        //                 echo "   kubectl set image deployment/service-dataingestor service-dataingestor=${DOCKERHUB_USERNAME}/${IMAGE_NAME}-dataingestor:${PROD_TAG} -n trip-service-prod"
-        //             }
-        //         }
-        //     }
-        // }
+        // GitOps 저장소 업데이트를 통한 배포
+        stage('Update GitOps Repository') {
+            steps {
+                echo "🔄 GitOps 저장소 이미지 태그 업데이트 중..."
+                script {
+                    // GitOps 저장소 클론
+                    sh '''
+                        rm -rf gitops-repo
+                        git clone https://github.com/KORgosu/trip-currency-local-gitops.git gitops-repo
+                        cd gitops-repo
+                    '''
+
+                    // kustomization.yaml의 이미지 태그 업데이트
+                    sh """
+                        cd gitops-repo/k8s/overlays/prod
+                        sed -i 's|korgosu/service-frontend:.*|korgosu/service-frontend:${PROD_TAG}|g' kustomization.yaml
+                        sed -i 's|korgosu/service-currency:.*|korgosu/service-currency:${PROD_TAG}|g' kustomization.yaml
+                        sed -i 's|korgosu/service-history:.*|korgosu/service-history:${PROD_TAG}|g' kustomization.yaml
+                        sed -i 's|korgosu/service-ranking:.*|korgosu/service-ranking:${PROD_TAG}|g' kustomization.yaml
+                        sed -i 's|korgosu/service-dataingestor:.*|korgosu/service-dataingestor:${PROD_TAG}|g' kustomization.yaml
+                    """
+
+                    // 변경사항 커밋 및 푸시
+                    sh """
+                        cd gitops-repo
+                        git config user.name "Jenkins CI"
+                        git config user.email "jenkins@yourdomain.com"
+                        git add .
+                        git commit -m "chore: Update image tags to ${PROD_TAG} for production deployment
+
+🚀 Automated deployment via Jenkins CI/CD
+- Frontend: korgosu/service-frontend:${PROD_TAG}
+- Currency: korgosu/service-currency:${PROD_TAG}
+- History: korgosu/service-history:${PROD_TAG}
+- Ranking: korgosu/service-ranking:${PROD_TAG}
+- DataIngestor: korgosu/service-dataingestor:${PROD_TAG}
+
+ArgoCD will automatically sync these changes to production cluster."
+                        git push origin main
+                    """
+
+                    echo "✅ GitOps 저장소 업데이트 완료!"
+                    echo "🔄 ArgoCD가 자동으로 변경사항을 감지하여 운영 클러스터에 배포합니다."
+                    echo "📋 업데이트된 이미지 태그: ${PROD_TAG}"
+                }
+            }
+        }
         
         // Health Check - 주석 처리됨
         // stage('Health Check') {
@@ -400,7 +366,7 @@ pipeline {
         }
         
         success {
-            echo "✅ 파이프라인 성공! Docker Hub와 ECR 이미지 푸시 완료"
+            echo "✅ 파이프라인 성공! Docker Hub와 ECR 이미지 푸시 및 GitOps 저장소 업데이트 완료"
             // Slack 알림은 Jenkins에서 별도 설정 필요
             // slackSend(
             //     channel: '#production',
